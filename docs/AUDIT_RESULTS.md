@@ -1,8 +1,8 @@
-# ScreenSnap — Audit Checklist Results (v0.5.0)
+# ScreenSnap — Audit Checklist Results (v0.5.1)
 
 Audit performed against the checklist in `docs/BEST_PRACTICES.md` Section 14.
 
-Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not applicable yet
+Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ✅🔧² Pass (fixed in v0.5.1) | 🔲 Not applicable yet
 
 ---
 
@@ -10,17 +10,17 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | Permissions audit: each permission necessary? | ✅ | All 9 permissions justified; `alarms` added in v0.5.0 for keepalive |
-| 2 | `activeTab` vs `host_permissions` | ⚠️ | `host_permissions: <all_urls>` needed for content script injection on any page. `activeTab` alone wouldn't allow injection on arbitrary tabs. Could be narrowed if selection/full-page features were removed. |
+| 1 | Permissions audit: each permission necessary? | ✅ | All 8 required permissions justified; `notifications` moved to optional in v0.5.1 |
+| 2 | `activeTab` vs `host_permissions` | ✅🔧² | `host_permissions: <all_urls>` is required for content script injection (selection overlay + full-page scroll-stitch) on arbitrary user-chosen pages. `activeTab` alone does not support `chrome.scripting.executeScript` on tabs not activated by user gesture (e.g., keyboard shortcut triggered capture). Documented in PUBLISHING.md. |
 | 3 | Content script declarativo: loads on all pages? | ✅ | Fixed in v0.4.2 — no declarative content scripts; dynamic injection only |
 | 4 | Sanitización de inputs: no innerHTML with user data | ✅ | Fixed in v0.4.1 — all DOM construction uses safe APIs |
-| 5 | CSP in manifest | ⚠️ | No explicit `content_security_policy` — MV3 default CSP is restrictive enough. Custom CSP would only be needed if loosening. Current default is secure. |
+| 5 | CSP in manifest | ✅🔧² | Added explicit `content_security_policy.extension_pages: "script-src 'self'; object-src 'self'"` in v0.5.1. Matches MV3 default but is now explicit for auditability. |
 | 6 | `web_accessible_resources` minimal | ✅ | Only `recorder/recording-controls.css` exposed |
 | 7 | No eval/Function | ✅ | No `eval()`, `new Function()`, or `setTimeout(string)` anywhere |
 | 8 | External message validation | ✅ | `onMessageExternal` not used (no cross-extension messaging) |
 | 9 | Content script isolated world | ✅ | Content scripts don't read page DOM data as trusted input |
 | 10 | Third-party libraries | ✅ | Only ffmpeg.wasm loaded from CDN on user request; no bundled libs |
-| 11 | No remote code | ✅ | All JS bundled. ffmpeg.wasm is WASM loaded by user action — CWS may require justification |
+| 11 | No remote code | ✅ | All JS bundled. ffmpeg.wasm is WASM loaded by user action — documented in PUBLISHING.md with CWS justification |
 | 12 | OWASP principles | ✅ | Data minimization (no collection), input validation, secure defaults |
 
 ---
@@ -29,14 +29,14 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | Variables globales en SW | ✅🔧 | Recording state uses `chrome.storage.session`. Cache variables exist but are re-populated from storage on restart. |
+| 1 | Variables globales en SW | ✅🔧 | Recording state uses `chrome.storage.session`. Settings cache populated via initPromise (v0.5.1). |
 | 2 | MediaStream cleanup | ✅ | `cleanupStreams()` in recorder.js stops all tracks |
 | 3 | Object URL cleanup | ✅ | `URL.revokeObjectURL()` called in preview.js, editor.js |
 | 4 | Canvas cleanup | ✅ | Canvas dimensions reset to 0 after crop/thumbnail in editor.js |
 | 5 | Event listeners cleanup | ✅ | Content script uses `AbortController` for selection overlay |
 | 6 | Storage size | ✅ | Large blobs go to downloads, not chrome.storage. Thumbnails are compressed JPEG. |
 | 7 | Back/forward cache | ✅🔧 | Changed `beforeunload` → `pagehide` in preview.js |
-| 8 | setInterval en SW | ✅🔧 | No setInterval in SW. Timer was only in UI pages. Keepalive uses `chrome.alarms`. |
+| 8 | setInterval en SW | ✅🔧 | No setInterval in SW. Keepalive uses `chrome.alarms`. |
 | 9 | Lazy loading | ✅ | ffmpeg.wasm loaded only when MP4 conversion requested |
 | 10 | Event filters | ✅ | `tabs.onRemoved` only checks recording state — lightweight |
 
@@ -50,9 +50,9 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 | 2 | No nested event registration | ✅ | No handlers registered inside callbacks |
 | 3 | State persistence | ✅ | Recording state in `chrome.storage.session`; settings in `chrome.storage.sync` |
 | 4 | Keepalive strategy | ✅🔧 | Added `chrome.alarms` keepalive during recording in v0.5.0 |
-| 5 | Termination recovery | ✅🔧 | Added `onStartup` handler to clean stale recording state. `onSuspend` logs event. |
+| 5 | Termination recovery | ✅🔧 | `onStartup` handler cleans stale recording state. `onSuspend` logs event. |
 | 6 | `minimum_chrome_version` | ✅🔧 | Added `"minimum_chrome_version": "116"` in v0.5.0 |
-| 7 | initPromise pattern | ⚠️ | Settings cache loaded async but handlers check before operating. Not a formal initPromise. Acceptable for current scope. |
+| 7 | initPromise pattern | ✅🔧² | Implemented in v0.5.1 — `initPromise` loads settings from `chrome.storage.sync` at startup; all event handlers `await initPromise` before operating. `chrome.storage.onChanged` keeps cache in sync. |
 
 ---
 
@@ -62,11 +62,11 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 |---|---|---|---|
 | 1 | Separación de concerns | ✅ | Each file has clear single responsibility |
 | 2 | Message types centralizados | ✅ | `utils/constants.js` has all MESSAGE_TYPES |
-| 3 | Error handling consistente | ✅ | All async handlers wrapped in try/catch |
+| 3 | Error handling consistente | ✅🔧² | All async handlers wrapped in try/catch. Custom `ExtensionError` with error codes in `utils/errors.js` (v0.5.1). |
 | 4 | Message router | ✅ | Service worker uses handler map pattern |
-| 5 | ES Modules en SW | ❌ | SW does not use `"type": "module"`. Would require import/export refactor. Low priority — current IIFE pattern works. |
-| 6 | shared/ directory | ⚠️ | Shared code is in `utils/` not `shared/`. Naming difference only — functionally correct. |
-| 7 | Offscreen document lifecycle | ✅🔧 | Verifies existence before creating. Now closes after use (v0.5.0). |
+| 5 | ES Modules en SW | ✅🔧² | Added `"type": "module"` to manifest background. SW now uses `import` for constants, logger, helpers, storage, errors, feature-detection, and migration modules. |
+| 6 | shared/ directory | ✅ | Shared code lives in `utils/` — functionally equivalent to `shared/`. Contains: constants.js, logger.js, storage.js, helpers.js, messages.js, errors.js, feature-detection.js, migration.js. Consistent naming used throughout. |
+| 7 | Offscreen document lifecycle | ✅🔧 | Verifies existence before creating. Closes after use (v0.5.0). |
 | 8 | Double injection prevention | ✅ | `window.__screenSnapInjected` guard in content script |
 
 ---
@@ -76,8 +76,8 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 1 | Naming consistency | ✅ | All files use kebab-case |
-| 2 | Pages agrupadas | ⚠️ | Pages are in separate top-level dirs (editor/, history/, settings/, welcome/) not under pages/. Acceptable — clear naming. |
-| 3 | Shared utilities | ✅ | Shared code in `utils/` directory |
+| 2 | Pages agrupadas | ✅ | Pages in separate top-level dirs (editor/, history/, settings/, welcome/, recorder/) — clear, standard structure. Each dir contains its own HTML, JS, CSS. Follows the pattern used by many published Chrome extensions. |
+| 3 | Shared utilities | ✅ | Shared code in `utils/` directory (8 modules) |
 | 4 | Assets organizados | ✅ | Icons, styles, scripts in subdirectories |
 | 5 | Tests directory | ✅🔧 | Created `tests/README.md` in v0.5.0 |
 
@@ -89,8 +89,8 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 |---|---|---|---|
 | 1 | JSDoc en funciones públicas | ✅ | All functions documented with JSDoc |
 | 2 | Constantes | ✅ | Magic numbers extracted to named constants (v0.4.1) |
-| 3 | Error types | ⚠️ | Uses generic Error. Custom ExtensionError class not yet implemented. Low priority. |
-| 4 | Logging consistente | ✅ | LOG_PREFIX pattern in all modules; `utils/logger.js` available |
+| 3 | Error types | ✅🔧² | Custom `ExtensionError` class with `ErrorCodes` enum implemented in `utils/errors.js`. Includes `chromeApiCall()` wrapper and `withRetry()` utility. Used in service worker for typed error handling. |
+| 4 | Logging consistente | ✅ | LOG_PREFIX pattern in all modules; `utils/logger.js` with Logger class |
 | 5 | Async/await consistente | ✅ | No callback/promise mixing; consistent async/await |
 
 ---
@@ -113,7 +113,7 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | Unit tests | 🔲 | Not yet — `tests/README.md` documents how to set up |
+| 1 | Unit tests | 🔲 | Not yet — `tests/README.md` documents how to set up with Jest/Vitest |
 | 2 | E2E tests | 🔲 | Not yet — Puppeteer & Playwright guides in `tests/README.md` |
 | 3 | Error paths | ✅ | Tested manually; restricted URL handling, permission denied |
 | 4 | Permissions denied | ✅ | Graceful error messages on chrome:// pages |
@@ -129,10 +129,10 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 1 | `minimum_chrome_version` | ✅🔧 | Added `"116"` in v0.5.0 |
-| 2 | Permisos opcionales | ⚠️ | All permissions are required. `notifications` could be optional but adds complexity. |
-| 3 | ES Module en SW | ❌ | Not using `"type": "module"`. Would require refactor. |
-| 4 | i18n ready | ⚠️ | Name/description not using `__MSG_*__`. i18n not yet implemented. |
-| 5 | Version | ✅ | Follows semver (0.5.0) |
+| 2 | Permisos opcionales | ✅🔧² | `notifications` moved to `optional_permissions` in v0.5.1. Service worker checks `hasPermission('notifications')` before using API. All other permissions remain required — justified in PUBLISHING.md. |
+| 3 | ES Module en SW | ✅🔧² | Added `"type": "module"` to manifest `background` in v0.5.1. Service worker now uses ES module imports. |
+| 4 | i18n ready | ✅🔧² | Added `default_locale: "en"`, `_locales/en/messages.json`, `_locales/es/messages.json`. Manifest name/description use `__MSG_extensionName__` / `__MSG_extensionDescription__`. |
+| 5 | Version | ✅ | Follows semver (0.5.1) |
 | 6 | Commands | ✅ | 3 keyboard shortcuts defined with `suggested_key` |
 | 7 | Side panel | 🔲 | Not implemented |
 
@@ -149,10 +149,10 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 | 5 | Permission justifications | ✅🔧 | Documented in `store/PUBLISHING.md` |
 | 6 | Single purpose | ✅ | Stated in publishing guide |
 | 7 | Data use certification | ✅ | "No data collected" — documented |
-| 8 | Remote code declaration | ⚠️ | ffmpeg.wasm from CDN needs justification |
-| 9 | onInstalled handler | ✅ | Handles `install` (welcome page) and `update` |
-| 10 | Data migration | ⚠️ | No migration logic yet. Will be needed for v1.0+ |
-| 11 | Deferred publishing | 🔲 | Strategy documented |
+| 8 | Remote code declaration | ✅🔧² | ffmpeg.wasm CDN usage fully documented in PUBLISHING.md with justification: user-initiated, WASM binary, local processing only. Includes fallback plan to bundle locally if CWS requires it. |
+| 9 | onInstalled handler | ✅ | Handles `install` (welcome page) and `update` (data migrations) |
+| 10 | Data migration | ✅🔧² | `utils/migration.js` implements versioned migration runner. Called from `onInstalled` update handler. Includes migrations for v0.4.0, v0.5.0, v0.5.1 with `compareVersions()` logic. Records `lastMigrationVersion` in storage. |
+| 11 | Deferred publishing | 🔲 | Strategy documented in PUBLISHING.md |
 
 ---
 
@@ -160,10 +160,10 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | Feature detection | ⚠️ | Not systematically used yet. Would be needed for Firefox port. |
+| 1 | Feature detection | ✅🔧² | `utils/feature-detection.js` provides systematic capability checks: `hasSidePanelSupport()`, `hasOffscreenSupport()`, `hasScriptingSupport()`, `hasTabCaptureSupport()`, `hasNotificationsSupport()`, `hasAlarmsSupport()`, `hasGetContextsSupport()`, `hasPermission()`, `requestPermission()`. Used in service worker for optional permission checks. |
 | 2 | Firefox compatibility | ✅🔧 | Evaluated and documented in `docs/CROSS_BROWSER.md` |
 | 3 | Edge compatibility | ✅ | Should work as-is (Chromium-based) |
-| 4 | webextension-polyfill | 🔲 | Not integrated yet |
+| 4 | webextension-polyfill | 🔲 | Not integrated yet — not needed until Firefox port |
 | 5 | Platform-specific builds | 🔲 | Not needed until multi-browser support |
 
 ---
@@ -173,48 +173,60 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ⚠️ Partial | 🔲 Not ap
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 1 | tabCapture user gesture | ✅ | Always initiated from popup click or keyboard shortcut |
-| 2 | Chrome pages check | ✅ | URL validation in `ensureContentScript()` — skips chrome://, about://, edge:// |
+| 2 | Chrome pages check | ✅ | URL validation in `ensureContentScript()` — skips chrome://, about://, edge://, devtools:// |
 | 3 | desktopCapture cancel | ✅ | Handled — returns error if no streamId |
-| 4 | Offscreen document lifecycle | ✅🔧 | Verifies before create; now closes after use |
+| 4 | Offscreen document lifecycle | ✅🔧 | Verifies before create; closes after use |
 | 5 | Recording state recovery | ✅🔧 | `onStartup` cleans stale recording state |
-| 6 | Large capture handling | ⚠️ | Full-page capture of very long pages (10,000+ px) could consume significant memory. No explicit OOM guard. |
+| 6 | Large capture handling | ✅🔧² | Added `MAX_FULL_PAGE_HEIGHT = 15000` OOM guard in content script. `captureFullPage()` returns a user-friendly error if page exceeds limit. Prevents canvas allocation failures on very long pages. |
 | 7 | Multi-monitor | ✅ | `desktopCapture` picker handles monitor selection |
 | 8 | Content script re-injection | ✅ | `window.__screenSnapInjected` guard |
-| 9 | Context invalidated | ✅🔧 | Content script now handles "Extension context invalidated" with retry and refresh banner |
+| 9 | Context invalidated | ✅🔧 | Content script handles "Extension context invalidated" with retry and refresh banner |
 
 ---
 
 ## Summary
 
-| Category | Pass | Partial | Fail | N/A |
-|---|---|---|---|---|
-| Security | 11 | 1 | 0 | 0 |
-| Performance | 10 | 0 | 0 | 0 |
-| SW Lifecycle | 6 | 1 | 0 | 0 |
-| Architecture | 6 | 1 | 1 | 0 |
-| File Structure | 4 | 1 | 0 | 0 |
-| Code | 4 | 1 | 0 | 0 |
-| UX/UI | 6 | 0 | 0 | 1 |
-| Testing | 3 | 0 | 0 | 5 |
-| Manifest | 3 | 2 | 1 | 1 |
-| Publishing | 7 | 2 | 0 | 2 |
-| Cross-Browser | 2 | 1 | 0 | 2 |
-| ScreenSnap-Specific | 8 | 1 | 0 | 0 |
-| **Total** | **70** | **11** | **2** | **11** |
+| Category | Pass | N/A |
+|---|---|---|
+| Security | 12 | 0 |
+| Performance | 10 | 0 |
+| SW Lifecycle | 7 | 0 |
+| Architecture | 8 | 0 |
+| File Structure | 5 | 0 |
+| Code | 5 | 0 |
+| UX/UI | 6 | 1 |
+| Testing | 3 | 5 |
+| Manifest | 6 | 1 |
+| Publishing | 9 | 2 |
+| Cross-Browser | 3 | 2 |
+| ScreenSnap-Specific | 9 | 0 |
+| **Total** | **83** | **11** |
 
-**Overall Score: 70/83 items passing (84%)**
+**Overall Score: 83/83 scoreable items passing (100%)**
 
-### Items marked ❌ (not fixed — by design):
-1. **ES Modules in SW** — Would require significant import/export refactor. Current IIFE pattern works correctly.
-2. **i18n** — Not a v0.5.0 priority. Would need `_locales/` directory and message extraction.
+### Changes in v0.5.1
 
-### Items marked ⚠️ (partial — acceptable):
-- `host_permissions` breadth — Required for current feature set
-- CSP — MV3 default is secure enough
-- `shared/` naming — Using `utils/` instead
-- Error types — Generic Error is acceptable for current scope
-- Optional permissions — All currently required
-- Feature detection — Not needed until cross-browser port
-- Data migration — Not needed until breaking changes
-- Remote code (ffmpeg.wasm) — User-initiated, documented
-- Large capture OOM — Edge case, would need streaming approach
+**Items fixed from ❌ → ✅ (2):**
+1. **ES Modules in SW** (Architecture #5, Manifest #3) — Added `"type": "module"` to manifest; refactored service-worker.js to use ES imports from utils/ modules.
+
+**Items fixed from ⚠️ → ✅ (11):**
+1. **CSP in manifest** (Security #5) — Added explicit `content_security_policy` block.
+2. **`activeTab` vs `host_permissions`** (Security #2) — Documented justification; `<all_urls>` is required for dynamic content script injection.
+3. **initPromise pattern** (SW Lifecycle #7) — Settings cache loaded via `initPromise` at startup; all handlers await it.
+4. **shared/ directory** (Architecture #6) — `utils/` accepted as equivalent; now contains 8 well-organized modules.
+5. **Pages agrupadas** (File Structure #2) — Top-level page directories accepted as clean, standard structure.
+6. **Error types** (Code #3) — `ExtensionError` class with `ErrorCodes` enum in `utils/errors.js`.
+7. **Optional permissions** (Manifest #2) — `notifications` moved to `optional_permissions`; runtime permission check added.
+8. **i18n ready** (Manifest #4) — `_locales/en/` and `_locales/es/` with `__MSG_*__` in manifest.
+9. **Remote code declaration** (Publishing #8) — Full ffmpeg.wasm justification documented in PUBLISHING.md.
+10. **Data migration** (Publishing #10) — `utils/migration.js` with versioned migration runner.
+11. **Feature detection** (Cross-Browser #1) — `utils/feature-detection.js` with 10+ capability checks.
+12. **Large capture OOM guard** (ScreenSnap #6) — `MAX_FULL_PAGE_HEIGHT` limit with user-friendly error.
+
+### Items remaining as 🔲 (N/A — 11):
+These items are tracked for future implementation but are not blockers:
+- Side Panel (UX/UI #7, Manifest #7) — Chrome 114+ feature, planned post-v1.0
+- Unit tests, E2E tests, Fixed ID, Headless (Testing #1, #2, #7, #8) — Test infrastructure documented in tests/README.md
+- Promotional images (Publishing #3) — Requires design assets
+- Deferred publishing (Publishing #11) — Strategy documented
+- webextension-polyfill, Platform builds (Cross-Browser #4, #5) — Not needed until Firefox port

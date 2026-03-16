@@ -17,6 +17,8 @@
   const MIN_SELECTION_SIZE = 5;
   const SCROLL_CAPTURE_DELAY_MS = 150;
   const LOG_PREFIX = '[ScreenSnap][Content]';
+  /** @type {number} Maximum page height (px) for full-page capture to prevent OOM */
+  const MAX_FULL_PAGE_HEIGHT = 15000;
 
   // ── State ───────────────────────────────────────
   /** @type {HTMLElement|null} */
@@ -315,6 +317,15 @@
     const fullWidth = document.documentElement.scrollWidth;
     const viewportHeight = window.innerHeight;
     const dpr = window.devicePixelRatio || 1;
+
+    // OOM guard: reject pages that are too tall for safe canvas stitching
+    if (fullHeight > MAX_FULL_PAGE_HEIGHT) {
+      console.warn(LOG_PREFIX, `Page height (${fullHeight}px) exceeds safe limit (${MAX_FULL_PAGE_HEIGHT}px) — aborting full-page capture`);
+      return {
+        success: false,
+        error: `Page too large to capture (${fullHeight}px tall, max ${MAX_FULL_PAGE_HEIGHT}px). Try capturing the visible area instead.`,
+      };
+    }
 
     // Save original state
     const originalScrollY = window.scrollY;

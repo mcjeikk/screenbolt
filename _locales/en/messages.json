@@ -1,0 +1,80 @@
+{
+  "extensionName": {
+    "message": "ScreenSnap",
+    "description": "Extension display name"
+  },
+  "extensionDescription": {
+    "message": "Free screenshot & screen recording tool. Capture, annotate, and record — no limits, no account, 100% local.",
+    "description": "Extension description shown in Chrome Web Store and extension management"
+  },
+  "captureVisible": {
+    "message": "Capture Visible Area",
+    "description": "Button label for visible area screenshot"
+  },
+  "captureFullPage": {
+    "message": "Capture Full Page",
+    "description": "Button label for full page screenshot"
+  },
+  "captureSelection": {
+    "message": "Capture Selection",
+    "description": "Button label for area selection screenshot"
+  },
+  "recordTab": {
+    "message": "Record Tab",
+    "description": "Button label for tab recording"
+  },
+  "recordScreen": {
+    "message": "Record Screen",
+    "description": "Button label for screen recording"
+  },
+  "recordCamera": {
+    "message": "Record Camera",
+    "description": "Button label for camera recording"
+  },
+  "history": {
+    "message": "History",
+    "description": "Link text for history page"
+  },
+  "settings": {
+    "message": "Settings",
+    "description": "Link text for settings page"
+  },
+  "screenshotSaved": {
+    "message": "Screenshot saved!",
+    "description": "Notification title after saving a screenshot"
+  },
+  "screenshotCopied": {
+    "message": "Screenshot copied!",
+    "description": "Notification title after copying to clipboard"
+  },
+  "recordingSaved": {
+    "message": "Recording saved!",
+    "description": "Notification title after saving a recording"
+  },
+  "recordingInterrupted": {
+    "message": "Recording Interrupted",
+    "description": "Notification title when recording is interrupted by SW termination"
+  },
+  "refreshBanner": {
+    "message": "ScreenSnap was updated. Please refresh this page to continue using it.",
+    "description": "Banner message shown when extension context is invalidated"
+  },
+  "selectionInstructions": {
+    "message": "Click and drag to select area • ESC to cancel",
+    "description": "Instructions shown during area selection"
+  },
+  "restrictedUrl": {
+    "message": "Cannot capture this page (restricted URL)",
+    "description": "Error message for chrome:// and other restricted pages"
+  },
+  "pageTooLarge": {
+    "message": "Page too large to capture (over $MAX_HEIGHT$ pixels tall). Try capturing the visible area instead.",
+    "description": "Error when full-page capture would exceed memory limits",
+    "placeholders": {
+      "MAX_HEIGHT": {
+        "content": "$1",
+        "example": "15000"
+      }
+    }
+  }
+}

@@ -102,13 +102,20 @@ zip -r screensnap.zip . \
 | `storage` | Stores user preferences (theme, format, etc.) and capture history metadata locally |
 | `offscreen` | Creates offscreen document to perform clipboard write operations (copy screenshot to clipboard), as service workers cannot access clipboard API directly |
 | `scripting` | Injects the area selection overlay and recording controls widget into the active tab when capture or recording is initiated by the user |
-| `notifications` | Shows optional desktop notifications when a capture or recording is completed |
 | `host_permissions: <all_urls>` | Required to inject content scripts for area selection overlay and full-page capture scroll-stitch on any web page the user chooses to capture |
+
+**Optional Permissions:**
+
+| Permission | Justification |
+|---|---|
+| `notifications` | Shows optional desktop notifications when a capture or recording is completed. Requested at runtime when user enables notifications in settings. |
+
+#### Remote Code Declaration
+- Select: **"Yes, my extension uses remote code"**
+- **Justification:** ffmpeg.wasm is loaded from a CDN (`https://unpkg.com/@ffmpeg/ffmpeg`) **only** when the user explicitly clicks "Convert to MP4" in the recording preview page. It is not loaded at install time, on extension startup, or during any other operation. The WASM binary performs local video format conversion — no data is sent to any server. If CWS reviewers require it bundled, a future version can include ffmpeg.wasm as a local asset (adds ~25 MB to extension size).
 
 #### Data Use Certification
 - Select: **"This extension does NOT collect or transmit user data"**
-- Remote code: **"No, I am not using remote code"**
-  - Note: ffmpeg.wasm is loaded from CDN only when user explicitly requests MP4 conversion. If CWS reviewers flag this, consider bundling ffmpeg.wasm locally or documenting it as a user-initiated action.
 
 ### Distribution Tab
 

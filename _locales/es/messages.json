@@ -1,0 +1,62 @@
+{
+  "extensionName": {
+    "message": "ScreenSnap"
+  },
+  "extensionDescription": {
+    "message": "Herramienta gratuita de capturas y grabación de pantalla. Captura, anota y graba — sin límites, sin cuenta, 100% local."
+  },
+  "captureVisible": {
+    "message": "Capturar Área Visible"
+  },
+  "captureFullPage": {
+    "message": "Capturar Página Completa"
+  },
+  "captureSelection": {
+    "message": "Capturar Selección"
+  },
+  "recordTab": {
+    "message": "Grabar Pestaña"
+  },
+  "recordScreen": {
+    "message": "Grabar Pantalla"
+  },
+  "recordCamera": {
+    "message": "Grabar Cámara"
+  },
+  "history": {
+    "message": "Historial"
+  },
+  "settings": {
+    "message": "Configuración"
+  },
+  "screenshotSaved": {
+    "message": "¡Captura guardada!"
+  },
+  "screenshotCopied": {
+    "message": "¡Captura copiada!"
+  },
+  "recordingSaved": {
+    "message": "¡Grabación guardada!"
+  },
+  "recordingInterrupted": {
+    "message": "Grabación Interrumpida"
+  },
+  "refreshBanner": {
+    "message": "ScreenSnap se actualizó. Por favor recarga esta página para seguir usándolo."
+  },
+  "selectionInstructions": {
+    "message": "Haz clic y arrastra para seleccionar área • ESC para cancelar"
+  },
+  "restrictedUrl": {
+    "message": "No se puede capturar esta página (URL restringida)"
+  },
+  "pageTooLarge": {
+    "message": "La página es demasiado grande para capturar (más de $MAX_HEIGHT$ píxeles de alto). Intenta capturar solo el área visible.",
+    "placeholders": {
+      "MAX_HEIGHT": {
+        "content": "$1",
+        "example": "15000"
+      }
+    }
+  }
+}

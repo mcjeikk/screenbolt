@@ -4,6 +4,32 @@ All notable changes to ScreenSnap will be documented in this file.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.5.1] - 2026-03-16
+
+### Added
+- **ES Modules**: Service worker now uses `"type": "module"` with ES imports from `utils/` modules
+- **i18n**: Added `_locales/en/messages.json` and `_locales/es/messages.json`; manifest name/description use `__MSG_*__` placeholders
+- **Error Types**: Created `utils/errors.js` with `ExtensionError` class, `ErrorCodes` enum, `chromeApiCall()` wrapper, and `withRetry()` utility
+- **Feature Detection**: Created `utils/feature-detection.js` with systematic capability checks for cross-browser compatibility
+- **Data Migration**: Created `utils/migration.js` with versioned migration runner called from `onInstalled` update handler
+- **CSP**: Added explicit `content_security_policy` block to manifest (`script-src 'self'; object-src 'self'`)
+- **initPromise**: Service worker loads settings cache via `initPromise` at startup; all event handlers await initialization before operating
+- **OOM Guard**: Full-page capture rejects pages taller than 15,000px with user-friendly error message
+
+### Changed
+- **Notifications**: Moved `notifications` from required to `optional_permissions`; service worker checks permission before using API
+- **Service Worker**: Refactored from IIFE/inline constants to ES module imports (constants, logger, helpers, storage, errors, feature-detection, migration)
+- **Service Worker**: All message handlers now await `initPromise` before processing; settings cache kept in sync via `chrome.storage.onChanged`
+- **Service Worker**: Error handling uses typed `ExtensionError` with error codes throughout
+- **Audit**: All 83 scoreable items now passing (100%) — see `docs/AUDIT_RESULTS.md`
+- **Version**: Bumped to 0.5.1 across manifest.json, utils/constants.js, and all file headers
+
+### Fixed
+- Service worker handlers could race with settings initialization (now awaits initPromise)
+- No data migration between versions (now has versioned migration runner)
+- Full-page capture of very long pages could cause out-of-memory (now has height limit)
+- Notification API calls could fail silently when permission not granted (now checks optional permission)
+
 ## [0.5.0] - 2026-03-16
 
 ### Added
