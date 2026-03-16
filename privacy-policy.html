@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScreenBolt — Privacy Policy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
+.container { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid #1e293b; }
+header h1 { font-size: 32px; color: #fff; margin-bottom: 8px; }
+header h1 span { color: #818cf8; }
+header p { color: #94a3b8; font-size: 14px; }
+h2 { color: #a5b4fc; font-size: 20px; margin: 32px 0 12px; }
+p, li { color: #cbd5e1; font-size: 15px; margin-bottom: 12px; }
+ul { padding-left: 24px; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #1e293b; font-size: 14px; }
+th { color: #818cf8; font-weight: 600; }
+td { color: #cbd5e1; }
+.summary { background: #1e293b; border-left: 4px solid #4f46e5; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 24px; }
+.summary p { margin: 0; font-weight: 500; color: #e2e8f0; }
+.footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid #1e293b; color: #64748b; font-size: 13px; }
+strong { color: #f1f5f9; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>Screen<span>Bolt</span> — Privacy Policy</h1>
+<p>Last Updated: March 16, 2026</p>
+</header>
+
+<div class="summary"><p>ScreenBolt does not collect, transmit, or share any user data. All processing happens locally in your browser. Period.</p></div>
+
+<h2>Data Collection</h2>
+<p><strong>ScreenBolt does NOT collect:</strong></p>
+<ul>
+<li>Personal information</li>
+<li>Usage analytics or telemetry</li>
+<li>Browsing history</li>
+<li>Screenshots or recordings</li>
+<li>IP addresses</li>
+<li>Device identifiers</li>
+<li>Any form of user data</li>
+</ul>
+
+<h2>Data Storage</h2>
+<p>All data created by ScreenBolt is stored <strong>locally on your device</strong> using Chrome's built-in storage APIs:</p>
+<ul>
+<li><strong>Settings</strong> are stored in <code>chrome.storage.sync</code> (synced across your Chrome devices via your Google account, if sync is enabled)</li>
+<li><strong>Capture history metadata</strong> (thumbnails, timestamps, filenames) is stored in <code>chrome.storage.local</code></li>
+<li><strong>Screenshots and recordings</strong> are saved to your local Downloads folder via Chrome's downloads API</li>
+</ul>
+<p>No data is ever sent to external servers.</p>
+
+<h2>Data Processing</h2>
+<ul>
+<li>All screenshot capture and stitching happens in your browser</li>
+<li>All image annotation and editing happens in your browser</li>
+<li>All video recording and compositing happens in your browser</li>
+<li>MP4 conversion (when requested) uses ffmpeg.wasm, which runs entirely within your browser's WebAssembly sandbox</li>
+<li>Clipboard operations use Chrome's offscreen document API within the extension sandbox</li>
+</ul>
+
+<h2>Third-Party Services</h2>
+<p>ScreenBolt does not use any third-party analytics, tracking, advertising, or data processing services.</p>
+<p>The only external resource optionally loaded is <strong>ffmpeg.wasm</strong> from a CDN (jsdelivr.net) when you choose to convert a recording to MP4 format. This is a client-side WebAssembly library — no user data is sent to the CDN; only the library code is downloaded.</p>
+
+<h2>Permissions</h2>
+<p>ScreenBolt requests the following Chrome permissions, each with a specific purpose:</p>
+<table>
+<tr><th>Permission</th><th>Purpose</th></tr>
+<tr><td><code>activeTab</code></td><td>Access the current tab to capture its visible content</td></tr>
+<tr><td><code>tabCapture</code></td><td>Capture tab video/audio stream for screen recording</td></tr>
+<tr><td><code>desktopCapture</code></td><td>Capture full screen or window for screen recording</td></tr>
+<tr><td><code>downloads</code></td><td>Save captures and recordings to your Downloads folder</td></tr>
+<tr><td><code>storage</code></td><td>Store preferences and history metadata locally</td></tr>
+<tr><td><code>offscreen</code></td><td>Create offscreen document for clipboard copy operations</td></tr>
+<tr><td><code>scripting</code></td><td>Inject selection overlay UI when capturing a selected area</td></tr>
+<tr><td><code>notifications</code></td><td>Show optional notifications after capture completion</td></tr>
+<tr><td><code>alarms</code></td><td>Maintain background service during active recording sessions</td></tr>
+</table>
+
+<h2>Host Permissions</h2>
+<p>ScreenBolt requests <code>&lt;all_urls&gt;</code> host permission to enable:</p>
+<ul>
+<li>Content script injection for area selection overlay on any web page</li>
+<li>Full-page screenshot stitching on any web page</li>
+<li>Recording controls widget injection during screen recording</li>
+</ul>
+<p>This permission is used <strong>only</strong> when you actively initiate a capture or recording. No content is accessed, read, or transmitted from any page.</p>
+
+<h2>Children's Privacy</h2>
+<p>ScreenBolt does not knowingly collect any data from anyone, including children under 13.</p>
+
+<h2>Changes to This Policy</h2>
+<p>If this privacy policy is updated, the changes will be reflected in the "Last Updated" date above and included in the extension's changelog.</p>
+
+<h2>Contact</h2>
+<p>For questions about this privacy policy, please open an issue on the project's <a href="https://github.com/mcjeikk/screenbolt" style="color:#818cf8">GitHub repository</a>.</p>
+
+<div class="footer">
+<p><strong>In short:</strong> ScreenBolt is a local tool. Nothing leaves your browser. Your captures are yours.</p>
+</div>
+</div>
+</body>
+</html>
