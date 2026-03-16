@@ -1,42 +1,86 @@
 /**
- * ScreenSnap — Recording Controls (Content Script)
- * Injects a floating widget into the page showing timer, pause, stop, mute controls.
- * Communicates with the background service worker.
+ * @file ScreenSnap — Recording Controls Widget (Content Script)
+ * @description Floating draggable widget injected into the active tab during recording.
+ * Shows timer, pause/resume, mute, and stop controls. Communicates with the
+ * background service worker via chrome.runtime.sendMessage.
+ * @version 0.4.1
  */
 
 (function () {
+  'use strict';
+
   // Prevent double injection
   if (document.getElementById('screensnap-recording-widget')) return;
 
-  // Inject CSS
+  // ── Constants ───────────────────────────────────
+  const WIDGET_ID = 'screensnap-recording-widget';
+  const CSS_URL = chrome.runtime.getURL('recorder/recording-controls.css');
+
+  // ── Inject CSS ──────────────────────────────────
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = chrome.runtime.getURL('recorder/recording-controls.css');
+  link.href = CSS_URL;
   document.head.appendChild(link);
 
-  // Create widget
+  // ── Build Widget DOM (no innerHTML — safe DOM construction) ──
   const widget = document.createElement('div');
-  widget.id = 'screensnap-recording-widget';
-  widget.innerHTML = `
-    <span class="ssw-rec-dot"></span>
-    <span class="ssw-timer">00:00</span>
-    <span class="ssw-divider"></span>
-    <button class="ssw-pause" title="Pause">⏸️</button>
-    <button class="ssw-mute" title="Mute mic">🎤</button>
-    <button class="ssw-stop" title="Stop recording">⏹ Stop</button>
-  `;
+  widget.id = WIDGET_ID;
+  widget.setAttribute('role', 'toolbar');
+  widget.setAttribute('aria-label', 'Recording controls');
+
+  const recDot = document.createElement('span');
+  recDot.className = 'ssw-rec-dot';
+  recDot.setAttribute('aria-hidden', 'true');
+  widget.appendChild(recDot);
+
+  const timerEl = document.createElement('span');
+  timerEl.className = 'ssw-timer';
+  timerEl.textContent = '00:00';
+  timerEl.setAttribute('aria-live', 'off');
+  timerEl.setAttribute('aria-label', 'Recording duration');
+  widget.appendChild(timerEl);
+
+  const divider = document.createElement('span');
+  divider.className = 'ssw-divider';
+  divider.setAttribute('aria-hidden', 'true');
+  widget.appendChild(divider);
+
+  const pauseBtn = document.createElement('button');
+  pauseBtn.className = 'ssw-pause';
+  pauseBtn.title = 'Pause';
+  pauseBtn.setAttribute('aria-label', 'Pause recording');
+  pauseBtn.textContent = '\u23F8\uFE0F';
+  widget.appendChild(pauseBtn);
+
+  const muteBtn = document.createElement('button');
+  muteBtn.className = 'ssw-mute';
+  muteBtn.title = 'Mute mic';
+  muteBtn.setAttribute('aria-label', 'Mute microphone');
+  muteBtn.textContent = '\uD83C\uDFA4';
+  widget.appendChild(muteBtn);
+
+  const stopBtn = document.createElement('button');
+  stopBtn.className = 'ssw-stop';
+  stopBtn.title = 'Stop recording';
+  stopBtn.setAttribute('aria-label', 'Stop recording');
+  stopBtn.textContent = '\u23F9 Stop';
+  widget.appendChild(stopBtn);
+
   document.body.appendChild(widget);
 
-  // State
+  // ── State ───────────────────────────────────────
   let isPaused = false;
   let isMuted = false;
   let startTime = Date.now();
+
+  /** @type {number|null} */
   let timerInterval = null;
 
-  // Timer
-  const timerEl = widget.querySelector('.ssw-timer');
-  const recDot = widget.querySelector('.ssw-rec-dot');
+  // ── Timer ───────────────────────────────────────
 
+  /**
+   * Update the timer display with elapsed time.
+   */
   function updateTimer() {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
@@ -46,45 +90,50 @@
 
   timerInterval = setInterval(updateTimer, 1000);
 
-  // Pause/Resume
-  widget.querySelector('.ssw-pause').addEventListener('click', (e) => {
+  // ── Pause/Resume ────────────────────────────────
+
+  pauseBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     isPaused = !isPaused;
-    const btn = widget.querySelector('.ssw-pause');
 
     if (isPaused) {
-      btn.textContent = '▶️';
-      btn.title = 'Resume';
+      pauseBtn.textContent = '\u25B6\uFE0F';
+      pauseBtn.title = 'Resume';
+      pauseBtn.setAttribute('aria-label', 'Resume recording');
       recDot.classList.add('paused');
       clearInterval(timerInterval);
       chrome.runtime.sendMessage({ action: 'widget-pause' });
     } else {
-      btn.textContent = '⏸️';
-      btn.title = 'Pause';
+      pauseBtn.textContent = '\u23F8\uFE0F';
+      pauseBtn.title = 'Pause';
+      pauseBtn.setAttribute('aria-label', 'Pause recording');
       recDot.classList.remove('paused');
       timerInterval = setInterval(updateTimer, 1000);
       chrome.runtime.sendMessage({ action: 'widget-resume' });
     }
   });
 
-  // Mute/Unmute
-  widget.querySelector('.ssw-mute').addEventListener('click', (e) => {
+  // ── Mute/Unmute ─────────────────────────────────
+
+  muteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     isMuted = !isMuted;
-    const btn = widget.querySelector('.ssw-mute');
-    btn.textContent = isMuted ? '🔇' : '🎤';
-    btn.title = isMuted ? 'Unmute mic' : 'Mute mic';
+    muteBtn.textContent = isMuted ? '\uD83D\uDD07' : '\uD83C\uDFA4';
+    muteBtn.title = isMuted ? 'Unmute mic' : 'Mute mic';
+    muteBtn.setAttribute('aria-label', isMuted ? 'Unmute microphone' : 'Mute microphone');
     chrome.runtime.sendMessage({ action: 'widget-mute', muted: isMuted });
   });
 
-  // Stop
-  widget.querySelector('.ssw-stop').addEventListener('click', (e) => {
+  // ── Stop ────────────────────────────────────────
+
+  stopBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     chrome.runtime.sendMessage({ action: 'widget-stop' });
     removeWidget();
   });
 
-  // Dragging
+  // ── Dragging ────────────────────────────────────
+
   let isDragging = false;
   let dragOffsetX = 0;
   let dragOffsetY = 0;
@@ -100,25 +149,34 @@
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    widget.style.left = (e.clientX - dragOffsetX) + 'px';
-    widget.style.top = (e.clientY - dragOffsetY) + 'px';
+    widget.style.left = `${e.clientX - dragOffsetX}px`;
+    widget.style.top = `${e.clientY - dragOffsetY}px`;
     widget.style.transform = 'none';
   });
 
   document.addEventListener('mouseup', () => {
-    isDragging = false;
-    widget.style.cursor = 'grab';
+    if (isDragging) {
+      isDragging = false;
+      widget.style.cursor = 'grab';
+    }
   });
 
-  // Listen for removal command
+  // ── External Removal Command ────────────────────
+
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.action === 'remove-recording-widget') {
+    if (msg && msg.action === 'remove-recording-widget') {
       removeWidget();
     }
   });
 
+  /**
+   * Remove the widget from the DOM and clean up resources.
+   */
   function removeWidget() {
-    clearInterval(timerInterval);
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
     widget.remove();
     link.remove();
   }

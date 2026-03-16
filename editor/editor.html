@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ScreenSnap — Editor</title>
+  <meta name="color-scheme" content="dark light">
   <link rel="stylesheet" href="../assets/styles/themes.css">
   <link rel="stylesheet" href="editor.css">
   <script src="../assets/scripts/theme-init.js"></script>
@@ -11,48 +12,48 @@
 <body>
   <div class="editor-container">
     <!-- Toolbar -->
-    <div class="toolbar">
+    <div class="toolbar" role="toolbar" aria-label="Editor toolbar">
       <div class="toolbar-left">
         <span class="toolbar-brand">📸 ScreenSnap</span>
       </div>
 
       <div class="toolbar-center">
         <!-- Annotation tools -->
-        <div class="tool-group" id="annotation-tools">
-          <button class="tool-btn" data-tool="arrow" title="Arrow (A)">
+        <div class="tool-group" id="annotation-tools" role="group" aria-label="Annotation tools">
+          <button class="tool-btn" data-tool="arrow" title="Arrow (A)" aria-label="Arrow tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <line x1="2" y1="14" x2="12" y2="4"/>
               <polyline points="7,3 13,3 13,9"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="rect" title="Rectangle (R)">
+          <button class="tool-btn" data-tool="rect" title="Rectangle (R)" aria-label="Rectangle tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="2" y="3" width="12" height="10" rx="2"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="circle" title="Ellipse (E)">
+          <button class="tool-btn" data-tool="circle" title="Ellipse (E)" aria-label="Ellipse tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <ellipse cx="8" cy="8" rx="6" ry="5"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="line" title="Line (L)">
+          <button class="tool-btn" data-tool="line" title="Line (L)" aria-label="Line tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <line x1="2" y1="14" x2="14" y2="2"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="freehand" title="Pen (P)">
+          <button class="tool-btn" data-tool="freehand" title="Pen (P)" aria-label="Pen tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M2 14 C4 10, 6 6, 8 8 C10 10, 12 4, 14 2"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="text" title="Text (T)">
+          <button class="tool-btn" data-tool="text" title="Text (T)" aria-label="Text tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
               <line x1="3" y1="3" x2="13" y2="3"/>
               <line x1="8" y1="3" x2="8" y2="14"/>
               <line x1="5" y1="14" x2="11" y2="14"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="blur" title="Blur/Pixelate (B)">
+          <button class="tool-btn" data-tool="blur" title="Blur/Pixelate (B)" aria-label="Blur tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" opacity="0.7">
               <rect x="1" y="1" width="4" height="4" rx="1"/>
               <rect x="6" y="1" width="4" height="4" rx="1" opacity="0.5"/>
@@ -65,13 +66,13 @@
               <rect x="11" y="11" width="4" height="4" rx="1"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="highlight" title="Highlight (H)">
+          <button class="tool-btn" data-tool="highlight" title="Highlight (H)" aria-label="Highlight tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <rect x="2" y="5" width="12" height="6" rx="1" fill="#FFD600" opacity="0.5"/>
               <line x1="4" y1="8" x2="12" y2="8" stroke="#333" stroke-width="1.5"/>
             </svg>
           </button>
-          <button class="tool-btn" data-tool="crop" title="Crop (C)">
+          <button class="tool-btn" data-tool="crop" title="Crop (C)" aria-label="Crop tool" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M4 1 L4 12 L15 12"/>
               <path d="M12 15 L12 4 L1 4"/>
@@ -81,13 +82,13 @@
           <span class="tool-separator"></span>
 
           <!-- Color picker -->
-          <label class="color-picker-wrapper" title="Annotation color">
+          <label class="color-picker-wrapper" title="Annotation color" aria-label="Choose annotation color">
             <input type="color" id="color-picker" value="#FF0000">
             <span class="color-preview" id="color-preview"></span>
           </label>
 
           <!-- Stroke width -->
-          <select id="stroke-width" class="stroke-select" title="Stroke width">
+          <select id="stroke-width" class="stroke-select" title="Stroke width" aria-label="Stroke width">
             <option value="2">Thin</option>
             <option value="4" selected>Medium</option>
             <option value="6">Thick</option>

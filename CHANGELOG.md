@@ -4,6 +4,46 @@ All notable changes to ScreenSnap will be documented in this file.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.4.1] - 2026-03-16
+
+### Changed
+- **Architecture**: Implemented centralized Message Router pattern (pub/sub) in service worker
+- **Architecture**: Created shared utility modules in `utils/`:
+  - `constants.js` — Single source of truth for all message types, storage keys, and config values
+  - `logger.js` — Structured logging system with levels and module prefixes
+  - `storage.js` — chrome.storage wrapper with error handling and quota management
+  - `helpers.js` — Shared utilities: timestamps, file sizes, sanitization, debounce, throttle
+  - `messages.js` — Type-safe message passing with validation
+- **Security**: Replaced all `innerHTML` with safe DOM construction in history, recording controls
+- **Security**: Added input sanitization for filenames and user text
+- **Security**: Added message validation (type checking) in service worker and all listeners
+- **Performance**: Service worker now uses `chrome.storage.session` for recording state (survives SW restart)
+- **Performance**: Canvas cleanup (width/height = 0) after crop and thumbnail generation
+- **Performance**: Object URL revocation in preview page (beforeunload cleanup)
+- **Performance**: Added debounce to history search input
+- **Performance**: Proper AbortController usage for selection overlay event cleanup
+- **Accessibility**: ARIA labels on all buttons, inputs, and interactive elements across all pages
+- **Accessibility**: `role` attributes on toolbars, groups, dialogs, and status regions
+- **Accessibility**: `aria-pressed` state on all editor tool toggle buttons
+- **Accessibility**: `aria-live` regions for status messages and recording indicators
+- **Accessibility**: Focus-visible styles for keyboard navigation on all interactive elements
+- **Accessibility**: Screen reader-only status message region in popup
+- **Accessibility**: Keyboard activation (Enter/Space) for history item cards
+- **Code Quality**: JSDoc comments on ALL functions across the entire codebase
+- **Code Quality**: File header comments describing purpose and version on every file
+- **Code Quality**: Magic numbers extracted to named constants
+- **Code Quality**: Consistent error handling with try/catch and descriptive messages
+- **Code Quality**: `'use strict'` in all IIFE-wrapped modules
+- **Documentation**: Professional README with architecture overview, installation guide, and privacy note
+- **Documentation**: Contributing guidelines and commit conventions
+
+### Fixed
+- Recording blob URL not revoked after storing to chrome.storage (memory leak)
+- Camera preview stream not stopped when switching away from camera source
+- Potential double-injection of content script (guard already existed, now more robust)
+- Missing error handler on image.onerror in editor loadImage
+- History confirm dialog now properly traps focus on cancel button
+
 ## [0.4.0] - 2026-03-16
 
 ### Added

@@ -1,20 +1,47 @@
 /**
- * ScreenSnap — Content Script
- * Handles selection overlay and full-page scroll capture within the page.
+ * @file ScreenSnap — Content Script
+ * @description Handles selection overlay for area capture and full-page scroll-and-stitch capture.
+ * Injected into web pages to interact with page DOM for capturing purposes.
+ * Uses AbortController for clean event listener management.
+ * @version 0.4.1
  */
 
 (() => {
+  'use strict';
+
   // Prevent double injection
   if (window.__screenSnapInjected) return;
   window.__screenSnapInjected = true;
 
+  // ── Constants ───────────────────────────────────
+  const MIN_SELECTION_SIZE = 5;
+  const SCROLL_CAPTURE_DELAY_MS = 150;
+  const LOG_PREFIX = '[ScreenSnap][Content]';
+
+  // ── State ───────────────────────────────────────
+  /** @type {HTMLElement|null} */
   let selectionOverlay = null;
+
+  /** @type {boolean} */
   let isSelecting = false;
+
+  /** @type {number} */
   let startX = 0;
+
+  /** @type {number} */
   let startY = 0;
 
-  // Listen for messages from background
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  /** @type {AbortController|null} */
+  let selectionAbortController = null;
+
+  // ── Message Listener ──────────────────────────────
+
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!message || typeof message.action !== 'string') {
+      sendResponse({ success: false, error: 'Invalid message' });
+      return false;
+    }
+
     switch (message.action) {
       case 'start-selection':
         startSelectionMode();
@@ -23,10 +50,9 @@
 
       case 'capture-full-page':
         captureFullPage().then(sendResponse);
-        return true; // async
+        return true; // async response
 
       case 'capture-visible-for-stitch':
-        // Background asks us to scroll and report position
         sendResponse({
           scrollY: window.scrollY,
           viewportHeight: window.innerHeight,
@@ -36,83 +62,100 @@
         break;
 
       default:
-        sendResponse({ success: false });
+        sendResponse({ success: false, error: `Unknown action: ${message.action}` });
     }
+    return false;
   });
 
   // ── Selection Mode ────────────────────────────────
 
+  /**
+   * Activate the selection overlay for area capture.
+   * Creates a full-viewport overlay with crosshair cursor.
+   */
   function startSelectionMode() {
     removeSelectionOverlay();
 
+    selectionAbortController = new AbortController();
+    const { signal } = selectionAbortController;
+
     selectionOverlay = document.createElement('div');
     selectionOverlay.id = 'screensnap-overlay';
-    selectionOverlay.innerHTML = `
-      <div id="screensnap-selection-box"></div>
-      <div id="screensnap-instructions">
-        Click and drag to select area • ESC to cancel
-      </div>
-    `;
+
+    // Build instructions with safe DOM API (no innerHTML for text-only elements)
+    const selectionBox = document.createElement('div');
+    selectionBox.id = 'screensnap-selection-box';
+    selectionOverlay.appendChild(selectionBox);
+
+    const instructions = document.createElement('div');
+    instructions.id = 'screensnap-instructions';
+    instructions.textContent = 'Click and drag to select area \u2022 ESC to cancel';
+    selectionOverlay.appendChild(instructions);
+
     document.body.appendChild(selectionOverlay);
 
-    const overlay = selectionOverlay;
-    const box = overlay.querySelector('#screensnap-selection-box');
-
-    overlay.addEventListener('mousedown', (e) => {
+    // ── Mouse Events ──
+    selectionOverlay.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
       isSelecting = true;
       startX = e.clientX;
       startY = e.clientY;
-      box.style.display = 'block';
-      box.style.left = `${startX}px`;
-      box.style.top = `${startY}px`;
-      box.style.width = '0';
-      box.style.height = '0';
-    });
+      selectionBox.style.display = 'block';
+      selectionBox.style.left = `${startX}px`;
+      selectionBox.style.top = `${startY}px`;
+      selectionBox.style.width = '0';
+      selectionBox.style.height = '0';
+    }, { signal });
 
-    overlay.addEventListener('mousemove', (e) => {
+    selectionOverlay.addEventListener('mousemove', (e) => {
       if (!isSelecting) return;
 
-      const currentX = e.clientX;
-      const currentY = e.clientY;
+      const left = Math.min(startX, e.clientX);
+      const top = Math.min(startY, e.clientY);
+      const width = Math.abs(e.clientX - startX);
+      const height = Math.abs(e.clientY - startY);
 
-      const left = Math.min(startX, currentX);
-      const top = Math.min(startY, currentY);
-      const width = Math.abs(currentX - startX);
-      const height = Math.abs(currentY - startY);
+      selectionBox.style.left = `${left}px`;
+      selectionBox.style.top = `${top}px`;
+      selectionBox.style.width = `${width}px`;
+      selectionBox.style.height = `${height}px`;
+    }, { signal });
 
-      box.style.left = `${left}px`;
-      box.style.top = `${top}px`;
-      box.style.width = `${width}px`;
-      box.style.height = `${height}px`;
-    });
-
-    overlay.addEventListener('mouseup', async (e) => {
+    selectionOverlay.addEventListener('mouseup', async (e) => {
       if (!isSelecting) return;
       isSelecting = false;
 
-      const rect = box.getBoundingClientRect();
-      if (rect.width < 5 || rect.height < 5) {
+      const rect = selectionBox.getBoundingClientRect();
+      if (rect.width < MIN_SELECTION_SIZE || rect.height < MIN_SELECTION_SIZE) {
         removeSelectionOverlay();
         return;
       }
 
-      // Capture selection
       await captureSelection(rect);
-    });
+    }, { signal });
 
     // ESC to cancel
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleEscape, { signal });
   }
 
+  /**
+   * Handle Escape key to cancel selection mode.
+   * @param {KeyboardEvent} e
+   */
   function handleEscape(e) {
     if (e.key === 'Escape') {
       removeSelectionOverlay();
-      document.removeEventListener('keydown', handleEscape);
     }
   }
 
+  /**
+   * Remove the selection overlay and clean up all event listeners.
+   */
   function removeSelectionOverlay() {
+    if (selectionAbortController) {
+      selectionAbortController.abort();
+      selectionAbortController = null;
+    }
     if (selectionOverlay) {
       selectionOverlay.remove();
       selectionOverlay = null;
@@ -121,23 +164,20 @@
   }
 
   /**
-   * Capture the selected area by cropping a visible tab capture.
+   * Capture the selected area by requesting a visible tab capture and cropping.
+   * @param {DOMRect} rect - The selection rectangle
    */
   async function captureSelection(rect) {
     removeSelectionOverlay();
 
     try {
-      // Ask background for visible capture
-      const response = await chrome.runtime.sendMessage({
-        action: 'capture-visible',
-      });
+      const response = await chrome.runtime.sendMessage({ action: 'capture-visible' });
 
       if (!response?.success || !response.dataUrl) {
-        console.error('[ScreenSnap] Failed to capture visible area');
+        console.error(LOG_PREFIX, 'Failed to capture visible area');
         return;
       }
 
-      // Crop the image to the selection
       const croppedDataUrl = await cropImage(
         response.dataUrl,
         rect.left,
@@ -146,25 +186,30 @@
         rect.height
       );
 
-      // Send cropped image to background for processing
       await chrome.runtime.sendMessage({
         action: 'selection-data',
         dataUrl: croppedDataUrl,
         filename: `ScreenSnap_Selection_${getTimestamp()}.png`,
       });
-    } catch (error) {
-      console.error('[ScreenSnap] Selection capture failed:', error);
+    } catch (err) {
+      console.error(LOG_PREFIX, 'Selection capture failed:', err);
     }
   }
 
   /**
-   * Crop an image using canvas.
+   * Crop an image data URL to the specified rectangle.
+   * Accounts for device pixel ratio for high-DPI displays.
+   * @param {string} dataUrl - Source image data URL
+   * @param {number} x - Left coordinate
+   * @param {number} y - Top coordinate
+   * @param {number} width - Crop width
+   * @param {number} height - Crop height
+   * @returns {Promise<string>} Cropped image as data URL
    */
   function cropImage(dataUrl, x, y, width, height) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        // Account for device pixel ratio
         const dpr = window.devicePixelRatio || 1;
         const canvas = document.createElement('canvas');
         canvas.width = width * dpr;
@@ -173,39 +218,42 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(
           img,
-          x * dpr,
-          y * dpr,
-          width * dpr,
-          height * dpr,
-          0,
-          0,
-          width * dpr,
-          height * dpr
+          x * dpr, y * dpr, width * dpr, height * dpr,
+          0, 0, width * dpr, height * dpr
         );
 
-        resolve(canvas.toDataURL('image/png'));
+        const result = canvas.toDataURL('image/png');
+
+        // Cleanup canvas memory
+        canvas.width = 0;
+        canvas.height = 0;
+
+        resolve(result);
       };
+      img.onerror = () => reject(new Error('Failed to load capture image for cropping'));
       img.src = dataUrl;
     });
   }
 
   /**
-   * Capture the full page by scrolling and stitching screenshots.
+   * Capture the full page by scrolling through and stitching screenshots.
+   * Saves and restores the original scroll position and overflow style.
+   * @returns {Promise<{success: boolean, error?: string}>}
    */
   async function captureFullPage() {
     const fullHeight = document.documentElement.scrollHeight;
     const fullWidth = document.documentElement.scrollWidth;
     const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
     const dpr = window.devicePixelRatio || 1;
 
-    // Save original scroll position
+    // Save original state
     const originalScrollY = window.scrollY;
     const originalOverflow = document.documentElement.style.overflow;
 
     // Hide scrollbar during capture
     document.documentElement.style.overflow = 'hidden';
 
+    /** @type {Array<{dataUrl: string, scrollY: number, isLast: boolean}>} */
     const captures = [];
     const totalScrolls = Math.ceil(fullHeight / viewportHeight);
 
@@ -214,13 +262,10 @@
         const scrollTo = Math.min(i * viewportHeight, fullHeight - viewportHeight);
         window.scrollTo(0, scrollTo);
 
-        // Wait for scroll and render
-        await delay(150);
+        // Wait for scroll settle and re-paint
+        await delay(SCROLL_CAPTURE_DELAY_MS);
 
-        // Capture visible area
-        const response = await chrome.runtime.sendMessage({
-          action: 'capture-visible',
-        });
+        const response = await chrome.runtime.sendMessage({ action: 'capture-visible' });
 
         if (response?.success && response.dataUrl) {
           captures.push({
@@ -231,20 +276,12 @@
         }
       }
 
-      // Stitch all captures together
-      const stitchedDataUrl = await stitchCaptures(
-        captures,
-        fullWidth,
-        fullHeight,
-        viewportHeight,
-        dpr
-      );
+      const stitchedDataUrl = await stitchCaptures(captures, fullWidth, fullHeight, viewportHeight, dpr);
 
-      // Restore scroll position
+      // Restore original state
       window.scrollTo(0, originalScrollY);
       document.documentElement.style.overflow = originalOverflow;
 
-      // Send to background for processing
       await chrome.runtime.sendMessage({
         action: 'full-page-data',
         dataUrl: stitchedDataUrl,
@@ -252,34 +289,46 @@
       });
 
       return { success: true };
-    } catch (error) {
-      // Restore on error
+    } catch (err) {
+      // Always restore on error
       window.scrollTo(0, originalScrollY);
       document.documentElement.style.overflow = originalOverflow;
-      console.error('[ScreenSnap] Full page capture failed:', error);
-      return { success: false, error: error.message };
+      console.error(LOG_PREFIX, 'Full page capture failed:', err);
+      return { success: false, error: err.message };
     }
   }
 
   /**
    * Stitch multiple viewport captures into one tall image.
+   * @param {Array} captures - Array of capture objects with dataUrl, scrollY, isLast
+   * @param {number} fullWidth - Total page width
+   * @param {number} fullHeight - Total page height
+   * @param {number} viewportHeight - Browser viewport height
+   * @param {number} dpr - Device pixel ratio
+   * @returns {Promise<string>} Stitched image as data URL
    */
   function stitchCaptures(captures, fullWidth, fullHeight, viewportHeight, dpr) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       canvas.width = fullWidth * dpr;
       canvas.height = fullHeight * dpr;
       const ctx = canvas.getContext('2d');
 
       let loaded = 0;
+      const total = captures.length;
 
-      captures.forEach((capture, index) => {
+      if (total === 0) {
+        reject(new Error('No captures to stitch'));
+        return;
+      }
+
+      captures.forEach((capture) => {
         const img = new Image();
         img.onload = () => {
           const yPos = capture.scrollY * dpr;
 
           if (capture.isLast) {
-            // Last capture might overlap — draw from bottom
+            // Last capture might overlap — draw aligned to the bottom
             const bottomY = fullHeight * dpr - img.height;
             ctx.drawImage(img, 0, Math.max(0, bottomY));
           } else {
@@ -287,10 +336,17 @@
           }
 
           loaded++;
-          if (loaded === captures.length) {
-            resolve(canvas.toDataURL('image/png'));
+          if (loaded === total) {
+            const result = canvas.toDataURL('image/png');
+
+            // Cleanup canvas memory
+            canvas.width = 0;
+            canvas.height = 0;
+
+            resolve(result);
           }
         };
+        img.onerror = () => reject(new Error('Failed to load capture for stitching'));
         img.src = capture.dataUrl;
       });
     });
@@ -298,12 +354,22 @@
 
   // ── Helpers ─────────────────────────────────────
 
+  /**
+   * Promise-based delay.
+   * @param {number} ms - Milliseconds to wait
+   * @returns {Promise<void>}
+   */
   function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /**
+   * Generate a formatted timestamp for filenames.
+   * @returns {string} Timestamp in YYYY-MM-DD_HH-MM-SS format
+   */
   function getTimestamp() {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}-${String(d.getSeconds()).padStart(2, '0')}`;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
   }
 })();

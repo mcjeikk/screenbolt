@@ -9,72 +9,75 @@
   <script src="../assets/scripts/theme-init.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container" role="main">
     <header class="header">
-      <img src="../assets/icons/icon-32.png" alt="ScreenSnap" class="logo">
+      <img src="../assets/icons/icon-32.png" alt="" class="logo" aria-hidden="true">
       <h1>ScreenSnap</h1>
     </header>
 
     <!-- Recording indicator (shown when recording is active) -->
-    <div id="recording-indicator" class="recording-indicator" style="display:none;">
-      <span class="rec-dot-pulse"></span>
+    <div id="recording-indicator" class="recording-indicator" style="display:none;" role="status" aria-live="polite">
+      <span class="rec-dot-pulse" aria-hidden="true"></span>
       <span>Recording in progress…</span>
     </div>
 
     <!-- Last capture quick access -->
-    <div id="last-capture" class="last-capture" style="display:none;">
-      <img id="last-capture-thumb" class="last-capture-thumb" alt="Last capture">
+    <div id="last-capture" class="last-capture" style="display:none;" role="region" aria-label="Last capture">
+      <img id="last-capture-thumb" class="last-capture-thumb" alt="Last capture thumbnail">
       <div class="last-capture-info">
         <span id="last-capture-name" class="last-capture-name">-</span>
-        <button id="btn-open-last" class="btn-link-small">Open last →</button>
+        <button id="btn-open-last" class="btn-link-small" aria-label="Open last capture">Open last →</button>
       </div>
     </div>
 
-    <section class="section">
+    <section class="section" aria-label="Screenshot tools">
       <h2>📸 Screenshot</h2>
-      <div class="button-group">
-        <button id="btn-visible" class="btn btn-primary" title="Alt+Shift+V">
-          <span class="btn-icon">🖥️</span>
+      <div class="button-group" role="group" aria-label="Screenshot capture options">
+        <button id="btn-visible" class="btn btn-primary" title="Capture visible area (Alt+Shift+V)" aria-label="Capture visible area">
+          <span class="btn-icon" aria-hidden="true">🖥️</span>
           <span class="btn-text">Visible Area</span>
-          <span class="btn-shortcut">Alt+Shift+V</span>
+          <span class="btn-shortcut" aria-hidden="true">Alt+Shift+V</span>
         </button>
-        <button id="btn-full" class="btn btn-primary" title="Alt+Shift+F">
-          <span class="btn-icon">📄</span>
+        <button id="btn-full" class="btn btn-primary" title="Capture full page (Alt+Shift+F)" aria-label="Capture full page">
+          <span class="btn-icon" aria-hidden="true">📄</span>
           <span class="btn-text">Full Page</span>
-          <span class="btn-shortcut">Alt+Shift+F</span>
+          <span class="btn-shortcut" aria-hidden="true">Alt+Shift+F</span>
         </button>
-        <button id="btn-selection" class="btn btn-primary" title="Alt+Shift+S">
-          <span class="btn-icon">✂️</span>
+        <button id="btn-selection" class="btn btn-primary" title="Capture selection (Alt+Shift+S)" aria-label="Capture selected area">
+          <span class="btn-icon" aria-hidden="true">✂️</span>
           <span class="btn-text">Selection</span>
-          <span class="btn-shortcut">Alt+Shift+S</span>
+          <span class="btn-shortcut" aria-hidden="true">Alt+Shift+S</span>
         </button>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" aria-label="Recording tools">
       <h2>🎥 Record</h2>
-      <div class="button-group">
-        <button id="btn-record-tab" class="btn btn-record">
-          <span class="btn-icon">📑</span>
+      <div class="button-group" role="group" aria-label="Recording options">
+        <button id="btn-record-tab" class="btn btn-record" aria-label="Record current tab">
+          <span class="btn-icon" aria-hidden="true">📑</span>
           <span class="btn-text">Current Tab</span>
         </button>
-        <button id="btn-record-screen" class="btn btn-record">
-          <span class="btn-icon">🖥️</span>
+        <button id="btn-record-screen" class="btn btn-record" aria-label="Record full screen">
+          <span class="btn-icon" aria-hidden="true">🖥️</span>
           <span class="btn-text">Full Screen</span>
         </button>
-        <button id="btn-record-cam" class="btn btn-record">
-          <span class="btn-icon">📷</span>
+        <button id="btn-record-cam" class="btn btn-record" aria-label="Record camera only">
+          <span class="btn-icon" aria-hidden="true">📷</span>
           <span class="btn-text">Camera</span>
         </button>
       </div>
     </section>
 
-    <footer class="footer">
-      <button id="btn-history" class="btn-link">📁 History</button>
-      <span class="footer-version">v0.4.0</span>
-      <button id="btn-settings" class="btn-link">⚙️ Settings</button>
+    <footer class="footer" role="contentinfo">
+      <button id="btn-history" class="btn-link" aria-label="Open capture history">📁 History</button>
+      <span class="footer-version" aria-label="Version 0.4.1">v0.4.1</span>
+      <button id="btn-settings" class="btn-link" aria-label="Open settings">⚙️ Settings</button>
     </footer>
   </div>
+
+  <!-- Status region for screen readers -->
+  <div id="status-message" role="status" aria-live="polite" class="sr-only"></div>
 
   <script src="popup.js"></script>
 </body>

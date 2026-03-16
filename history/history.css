@@ -308,3 +308,33 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background: var(--ss-primary);
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--ss-shadow-lg);
+}
+
+/* Focus visible for keyboard navigation */
+.history-item:focus-visible {
+  outline: 2px solid var(--ss-primary);
+  outline-offset: 2px;
+}
+
+.filter-btn:focus-visible,
+.btn:focus-visible,
+.btn-confirm-yes:focus-visible,
+.btn-confirm-no:focus-visible {
+  outline: 2px solid var(--ss-primary);
+  outline-offset: 2px;
+}

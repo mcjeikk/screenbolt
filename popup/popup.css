@@ -1,4 +1,4 @@
-/* ScreenSnap Popup Styles v0.4.0 */
+/* ScreenSnap Popup Styles v0.4.1 */
 
 * {
   margin: 0;
@@ -239,4 +239,40 @@ body {
 .btn-link:hover {
   background: var(--ss-bg-hover, rgba(0,0,0,0.04));
   color: var(--ss-primary);
+}
+
+/* ── Accessibility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible styles for keyboard navigation */
+.btn:focus-visible,
+.btn-link:focus-visible,
+.btn-link-small:focus-visible {
+  outline: 2px solid var(--ss-primary, #4F46E5);
+  outline-offset: 2px;
+}
+
+/* Error toast */
+.error-toast {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  padding: 8px 12px;
+  background: #FEE2E2;
+  color: #DC2626;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  z-index: 100;
 }
