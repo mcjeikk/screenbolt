@@ -185,6 +185,26 @@ registerHandler(MESSAGE_TYPES.WIDGET_STOP, () => handleStopRecording());
 // Timer request from widget
 registerHandler('get-recording-time', () => forwardToOffscreen('offscreen-get-time'));
 
+// Offscreen recording data relay (offscreen can't access chrome.storage)
+registerHandler('offscreen-store-recording-meta', async (msg) => {
+  await chrome.storage.local.set({
+    'recording-chunks-count': msg.totalChunks,
+    'recording-mime': msg.mimeType,
+    'pendingRecording': {
+      duration: msg.duration,
+      size: msg.size,
+      mimeType: msg.mimeType,
+      timestamp: Date.now(),
+    },
+  });
+  return { success: true };
+});
+
+registerHandler('offscreen-store-recording-chunk', async (msg) => {
+  await chrome.storage.local.set({ [`recording-chunk-${msg.index}`]: msg.data });
+  return { success: true };
+});
+
 // Offscreen recording complete
 registerHandler('offscreen-recording-complete', (msg) => onRecordingComplete(msg.duration, msg.size));
 

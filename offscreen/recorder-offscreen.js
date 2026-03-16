@@ -407,7 +407,9 @@
   // ── Recording Stopped Handler ───────────────────
 
   /**
-   * Handle MediaRecorder stop: serialize blob to storage and notify SW.
+   * Handle MediaRecorder stop: serialize blob and send to SW for storage.
+   * Offscreen documents don't have access to chrome.storage, so we relay
+   * the data to the service worker which stores it in chrome.storage.local.
    */
   async function onRecordingStopped() {
     console.info(LOG_PREFIX, 'MediaRecorder stopped, processing chunks...');
@@ -415,31 +417,33 @@
     const blob = new Blob(recordedChunks, { type: mediaRecorder?.mimeType || 'video/webm' });
     const duration = getElapsedMs();
 
-    // Serialize blob to chrome.storage.local in chunks
+    // Serialize blob and send chunks to SW for storage
     try {
       const arrayBuffer = await blob.arrayBuffer();
       const uint8 = new Uint8Array(arrayBuffer);
       const totalChunks = Math.ceil(uint8.length / RECORDING_CHUNK_SIZE);
 
-      const storageOps = {
-        'recording-chunks-count': totalChunks,
-        'recording-mime': blob.type,
-        'pendingRecording': {
-          duration,
-          size: blob.size,
-          mimeType: blob.type,
-          timestamp: Date.now(),
-        },
-      };
+      // Send metadata first
+      await chrome.runtime.sendMessage({
+        action: 'offscreen-store-recording-meta',
+        totalChunks,
+        mimeType: blob.type,
+        duration,
+        size: blob.size,
+      });
 
+      // Send each chunk to SW for storage
       for (let i = 0; i < totalChunks; i++) {
         const start = i * RECORDING_CHUNK_SIZE;
         const end = Math.min(start + RECORDING_CHUNK_SIZE, uint8.length);
-        storageOps[`recording-chunk-${i}`] = Array.from(uint8.slice(start, end));
+        await chrome.runtime.sendMessage({
+          action: 'offscreen-store-recording-chunk',
+          index: i,
+          data: Array.from(uint8.slice(start, end)),
+        });
       }
 
-      await chrome.storage.local.set(storageOps);
-      console.info(LOG_PREFIX, `Saved ${totalChunks} chunks (${formatSize(blob.size)})`);
+      console.info(LOG_PREFIX, `Sent ${totalChunks} chunks to SW (${formatSize(blob.size)})`);
     } catch (err) {
       console.error(LOG_PREFIX, 'Failed to serialize recording:', err);
     }
