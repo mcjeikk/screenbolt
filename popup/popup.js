@@ -85,36 +85,17 @@
    * Bind toggle interactions for PiP sub-options visibility.
    */
   function bindRecordingToggles() {
-    // Pre-request mic permission when toggle is turned ON (needs visible UI for prompt)
-    const micToggle = document.getElementById('opt-mic');
-    if (micToggle) {
-      micToggle.addEventListener('change', async (e) => {
-        if (e.target.checked) {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(t => t.stop());
-          } catch {
-            e.target.checked = false;
-            showRecError('Microphone permission denied');
-          }
-        }
+    document.getElementById('opt-pip').addEventListener('change', (e) => {
+      document.getElementById('pip-options').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // Grant Permissions button — opens a tab where Chrome can show the prompt
+    const grantBtn = document.getElementById('btn-grant-permissions');
+    if (grantBtn) {
+      grantBtn.addEventListener('click', () => {
+        chrome.tabs.create({ url: chrome.runtime.getURL('permissions/permissions.html') });
       });
     }
-
-    document.getElementById('opt-pip').addEventListener('change', async (e) => {
-      document.getElementById('pip-options').style.display = e.target.checked ? 'block' : 'none';
-      // Pre-request camera permission when PiP is turned ON
-      if (e.target.checked) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          stream.getTracks().forEach(t => t.stop());
-        } catch {
-          e.target.checked = false;
-          document.getElementById('pip-options').style.display = 'none';
-          showRecError('Camera permission denied');
-        }
-      }
-    });
   }
 
   // ── Start Recording ─────────────────────────────
