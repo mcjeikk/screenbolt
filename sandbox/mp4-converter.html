@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MP4 Converter (Sandboxed)</title>
+</head>
+<body>
+  <script type="module">
+    /**
+     * Sandboxed page for ffmpeg.wasm MP4 conversion.
+     * Sandbox pages have relaxed CSP — blob: URLs and eval are allowed.
+     * Communication with parent via window.addEventListener('message').
+     * No chrome.* APIs available here.
+     */
+
+    let ffmpegLoaded = false;
+    let ffmpeg = null;
+
+    async function loadFFmpeg(onProgress) {
+      const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
+      const { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+
+      ffmpeg = new FFmpeg();
+
+      ffmpeg.on('progress', ({ progress }) => {
+        onProgress('converting', progress);
+      });
+
+      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      ffmpegLoaded = true;
+    }
+
+    async function convertToMP4(webmData, source) {
+      const sendProgress = (stage, pct) => {
+        source.postMessage({ type: 'mp4-progress', stage, progress: pct }, '*');
+      };
+
+      try {
+        if (!ffmpegLoaded) {
+          sendProgress('loading', 0);
+          await loadFFmpeg(sendProgress);
+          sendProgress('loading', 1);
+        }
+
+        sendProgress('converting', 0);
+
+        const inputData = new Uint8Array(webmData);
+        await ffmpeg.writeFile('input.webm', inputData);
+        await ffmpeg.exec([
+          '-i', 'input.webm',
+          '-c:v', 'libx264',
+          '-preset', 'fast',
+          '-crf', '23',
+          '-c:a', 'aac',
+          '-b:a', '128k',
+          'output.mp4'
+        ]);
+
+        const data = await ffmpeg.readFile('output.mp4');
+
+        // Cleanup ffmpeg files
+        await ffmpeg.deleteFile('input.webm');
+        await ffmpeg.deleteFile('output.mp4');
+
+        // Send the MP4 data back
+        source.postMessage(
+          { type: 'mp4-result', success: true, data: data.buffer },
+          '*',
+          [data.buffer] // Transfer, not copy
+        );
+
+      } catch (err) {
+        source.postMessage({ type: 'mp4-result', success: false, error: err.message }, '*');
+      }
+    }
+
+    // Listen for conversion requests from parent
+    window.addEventListener('message', (event) => {
+      if (event.data?.type === 'convert-to-mp4') {
+        convertToMP4(event.data.webmData, event.source);
+      }
+    });
+
+    // Signal ready
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'mp4-converter-ready' }, '*');
+    }
+  </script>
+</body>
+</html>
