@@ -120,6 +120,28 @@
         countdown: document.getElementById('opt-countdown').checked,
       };
 
+      // Pre-request mic permission from popup (offscreen docs can't show prompts)
+      if (config.microphone) {
+        try {
+          const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          testStream.getTracks().forEach(t => t.stop());
+        } catch (micErr) {
+          console.warn(LOG_PREFIX, 'Mic permission denied:', micErr.message);
+          config.microphone = false;
+        }
+      }
+
+      // Pre-request webcam permission for PiP
+      if (config.pip && config.source !== 'camera') {
+        try {
+          const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          testStream.getTracks().forEach(t => t.stop());
+        } catch (camErr) {
+          console.warn(LOG_PREFIX, 'Camera permission denied:', camErr.message);
+          config.pip = false;
+        }
+      }
+
       // Save config for next time
       await chrome.storage.session.set({ lastRecordingConfig: config });
 
