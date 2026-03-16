@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScreenSnap"
+    "message": "ScreenBolt"
   },
   "extensionDescription": {
     "message": "Herramienta gratuita de capturas y grabación de pantalla. Captura, anota y graba — sin límites, sin cuenta, 100% local."
@@ -42,7 +42,7 @@
     "message": "Grabación Interrumpida"
   },
   "refreshBanner": {
-    "message": "ScreenSnap se actualizó. Por favor recarga esta página para seguir usándolo."
+    "message": "ScreenBolt se actualizó. Por favor recarga esta página para seguir usándolo."
   },
   "selectionInstructions": {
     "message": "Haz clic y arrastra para seleccionar área • ESC para cancelar"

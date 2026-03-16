@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Settings Page v0.5.0
+ * @file ScreenBolt — Settings Page v0.5.0
  * @description Persists all user settings in chrome.storage.sync for cross-device sync.
  * Uses a field map pattern for clean, maintainable settings binding.
  * @version 0.5.0
@@ -156,7 +156,7 @@
       await chrome.storage.sync.set({ settings });
       showSaveStatus();
     } catch (err) {
-      console.error('[ScreenSnap][Settings] Save failed:', err);
+      console.error('[ScreenBolt][Settings] Save failed:', err);
     }
   }
 

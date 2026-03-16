@@ -1,4 +1,4 @@
-# Chrome Extension Best Practices — Guía Definitiva para ScreenSnap
+# Chrome Extension Best Practices — Guía Definitiva para ScreenBolt
 
 > Documento de referencia para el desarrollo profesional de extensiones Chrome MV3.
 > Basado en documentación oficial de Chrome, Mozilla Extension Workshop, Microsoft Edge docs, y mejores prácticas de la industria.
@@ -21,7 +21,7 @@
 11. [Cross-Browser Compatibility](#11-cross-browser-compatibility)
 12. [Anti-Patrones — Qué NO Hacer](#12-anti-patrones--qué-no-hacer)
 13. [Error Recovery Patterns](#13-error-recovery-patterns)
-14. [Audit Checklist para ScreenSnap](#14-audit-checklist-para-screensnap)
+14. [Audit Checklist para ScreenBolt](#14-audit-checklist-para-screenbolt)
 
 ---
 
@@ -43,7 +43,7 @@ Una extensión Chrome MV3 profesional tiene estos componentes claramente separad
 **Regla de oro:** Cada componente debe tener UNA responsabilidad clara.
 
 ```
-screensnap/
+screenbolt/
 ├── manifest.json
 ├── background/           # Service Worker — coordinación y lógica central
 │   └── service-worker.js
@@ -322,7 +322,7 @@ async function ensureOffscreenDocument(path, reasons, justification) {
   }
 }
 
-// Usage for ScreenSnap recording
+// Usage for ScreenBolt recording
 await ensureOffscreenDocument(
   'offscreen/offscreen.html',
   ['USER_MEDIA', 'DISPLAY_MEDIA'],
@@ -485,7 +485,7 @@ Understanding which Chrome version introduced which improvement is critical for 
 
 ### 2.4 Keepalive Strategies
 
-#### For Recording Sessions (Critical for ScreenSnap)
+#### For Recording Sessions (Critical for ScreenBolt)
 
 ```javascript
 // Strategy 1: chrome.alarms keepalive (works in all MV3 versions)
@@ -661,7 +661,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 // Shows warning: "Read and change your data on [matched sites]"
 ```
 
-**For ScreenSnap:** Use `activeTab` + `scripting` for on-demand capture. The user clicks the extension, which triggers capture. No need for `<all_urls>` or declarative content scripts.
+**For ScreenBolt:** Use `activeTab` + `scripting` for on-demand capture. The user clicks the extension, which triggers capture. No need for `<all_urls>` or declarative content scripts.
 
 #### Permissions That Trigger Warnings
 
@@ -895,7 +895,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 ### 4.2 Memory Management (Canvas y Video Streams)
 
-**Especialmente crítico para ScreenSnap:**
+**Especialmente crítico para ScreenBolt:**
 
 ```javascript
 // ✅ Liberar MediaStreams cuando ya no se necesitan
@@ -1004,7 +1004,7 @@ async function checkStorageUsage() {
   return { bytesInUse, maxBytes, usagePercent };
 }
 
-// ✅ Para ScreenSnap: NO guardar imágenes/videos grandes en chrome.storage
+// ✅ Para ScreenBolt: NO guardar imágenes/videos grandes en chrome.storage
 // Usar IndexedDB para blobs grandes, o descargar directamente
 async function saveCapture(blob, metadata) {
   // Metadata en chrome.storage (pequeño)
@@ -1092,7 +1092,7 @@ controller.abort(); // Cleanup all at once
 ### 5.1 Estructura de Carpetas Recomendada
 
 ```
-screensnap/
+screenbolt/
 ├── manifest.json
 ├── background/
 │   ├── service-worker.js          # Entry point, importa módulos
@@ -1336,7 +1336,7 @@ await chrome.scripting.removeCSS({
 ```javascript
 // Register content scripts dynamically (persist across SW restarts)
 await chrome.scripting.registerContentScripts([{
-  id: 'screensnap-overlay',
+  id: 'screenbolt-overlay',
   matches: ['<all_urls>'],
   js: ['content/selection-overlay.js'],
   css: ['content/styles/overlay.css'],
@@ -1346,13 +1346,13 @@ await chrome.scripting.registerContentScripts([{
 
 // Update registered scripts
 await chrome.scripting.updateContentScripts([{
-  id: 'screensnap-overlay',
+  id: 'screenbolt-overlay',
   excludeMatches: ['*://sensitive-site.com/*']
 }]);
 
 // Unregister when no longer needed
 await chrome.scripting.unregisterContentScripts({
-  ids: ['screensnap-overlay']
+  ids: ['screenbolt-overlay']
 });
 
 // List all registered dynamic content scripts
@@ -1387,10 +1387,10 @@ const results = await chrome.scripting.executeScript({
 
 ```javascript
 // In the content script itself — guard against re-injection
-if (window.__screensnap_injected) {
+if (window.__screenbolt_injected) {
   // Already injected, skip initialization
 } else {
-  window.__screensnap_injected = true;
+  window.__screenbolt_injected = true;
   initContentScript();
 }
 
@@ -1399,7 +1399,7 @@ async function injectContentScript(tabId) {
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: () => !!window.__screensnap_injected
+      func: () => !!window.__screenbolt_injected
     });
     if (results[0]?.result) return; // Already injected
   } catch {
@@ -1505,7 +1505,7 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
 | **Navigation** | None | Persists during navigation |
 | **Availability** | Chrome 88+ | Chrome 114+ |
 
-**For ScreenSnap:** Side panel could be used for capture history, annotation tools, or recording controls — anything that benefits from persistent visibility.
+**For ScreenBolt:** Side panel could be used for capture history, annotation tools, or recording controls — anything that benefits from persistent visibility.
 
 ---
 
@@ -1606,7 +1606,7 @@ document.addEventListener('keydown', (e) => {
 // _locales/en/messages.json
 {
   "extensionName": {
-    "message": "ScreenSnap",
+    "message": "ScreenBolt",
     "description": "Extension name"
   },
   "captureVisible": {
@@ -1736,7 +1736,7 @@ const path = require('path');
 
 const EXTENSION_PATH = path.resolve(__dirname, '../../');
 
-describe('ScreenSnap E2E', () => {
+describe('ScreenBolt E2E', () => {
   let browser;
 
   beforeAll(async () => {
@@ -1822,7 +1822,7 @@ const path = require('path');
 
 const EXTENSION_PATH = path.resolve(__dirname, '../../');
 
-test.describe('ScreenSnap E2E (Playwright)', () => {
+test.describe('ScreenBolt E2E (Playwright)', () => {
   let context;
 
   test.beforeAll(async () => {
@@ -1990,7 +1990,7 @@ The Privacy tab has four critical sections:
 #### 1. Single Purpose Description
 Clearly state what your extension does in one concise statement.
 
-> Example for ScreenSnap: "ScreenSnap captures screenshots and records screen activity from browser tabs, allowing users to annotate and save captures locally."
+> Example for ScreenBolt: "ScreenBolt captures screenshots and records screen activity from browser tabs, allowing users to annotate and save captures locally."
 
 #### 2. Permission Justifications
 For each permission in your manifest, explain WHY it's needed:
@@ -2011,7 +2011,7 @@ For each permission in your manifest, explain WHY it's needed:
 Declare which data types your extension collects:
 - ✅ Check applicable data types
 - ✅ Certify compliance with limited use policy
-- For ScreenSnap: If all processing is local and no data leaves the browser, declare that
+- For ScreenBolt: If all processing is local and no data leaves the browser, declare that
 
 ### 10.4 The Review Process
 
@@ -2059,7 +2059,7 @@ Declare which data types your extension collects:
 
 ```
 1. Create ZIP of extension files
-   └── zip -r screensnap.zip . -x "*.git*" "node_modules/*" "tests/*" "docs/*"
+   └── zip -r screenbolt.zip . -x "*.git*" "node_modules/*" "tests/*" "docs/*"
 
 2. Upload to Chrome Developer Dashboard
    └── chrome.google.com/webstore/devconsole
@@ -2104,7 +2104,7 @@ chrome.runtime.onInstalled.addListener((details) => {
         chrome.notifications.create('update-notification', {
           type: 'basic',
           iconUrl: 'assets/icons/icon-128.png',
-          title: `ScreenSnap updated to v${currentVersion}`,
+          title: `ScreenBolt updated to v${currentVersion}`,
           message: 'Click to see what\'s new!',
         });
       }
@@ -2216,7 +2216,7 @@ const platforms = {
       // Firefox-specific: browser_specific_settings
       browser_specific_settings: {
         gecko: {
-          id: 'screensnap@yourname.com',
+          id: 'screenbolt@yourname.com',
           strict_min_version: '109.0'
         }
       }
@@ -2560,7 +2560,7 @@ async function captureWithPermissionCheck() {
         type: 'basic',
         iconUrl: 'assets/icons/icon-128.png',
         title: 'Permission Required',
-        message: 'ScreenSnap needs recording permission to capture your screen. Click the extension icon to grant access.',
+        message: 'ScreenBolt needs recording permission to capture your screen. Click the extension icon to grant access.',
       });
       return null;
     }
@@ -2572,7 +2572,7 @@ async function captureWithPermissionCheck() {
 
 ---
 
-## 14. AUDIT CHECKLIST para ScreenSnap
+## 14. AUDIT CHECKLIST para ScreenBolt
 
 ### 🔒 Seguridad
 
@@ -2692,7 +2692,7 @@ async function captureWithPermissionCheck() {
 - [ ] **webextension-polyfill:** ¿Se usa para cross-browser API normalization?
 - [ ] **Platform-specific builds:** ¿Hay build pipeline para diferentes browsers?
 
-### 🚨 Específicos de ScreenSnap
+### 🚨 Específicos de ScreenBolt
 
 - [ ] **tabCapture user gesture:** ¿Capturas siempre inician desde user gesture?
 - [ ] **Chrome pages check:** ¿Se verifica que no se intente capturar `chrome://`?
@@ -2752,5 +2752,5 @@ async function captureWithPermissionCheck() {
 
 ---
 
-*Documento generado como referencia definitiva para el desarrollo profesional del proyecto ScreenSnap.*
+*Documento generado como referencia definitiva para el desarrollo profesional del proyecto ScreenBolt.*
 *Última actualización: 2026-03-16*

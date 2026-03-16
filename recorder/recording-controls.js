@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Recording Controls Widget (Content Script)
+ * @file ScreenBolt — Recording Controls Widget (Content Script)
  * @description Floating draggable widget injected into the active tab during recording.
  * Shows timer, pause/resume, mute, and stop controls. Communicates with the
  * background service worker via chrome.runtime.sendMessage.
@@ -10,10 +10,10 @@
   'use strict';
 
   // Prevent double injection
-  if (document.getElementById('screensnap-recording-widget')) return;
+  if (document.getElementById('screenbolt-recording-widget')) return;
 
   // ── Constants ───────────────────────────────────
-  const WIDGET_ID = 'screensnap-recording-widget';
+  const WIDGET_ID = 'screenbolt-recording-widget';
   const CSS_URL = chrome.runtime.getURL('recorder/recording-controls.css');
 
   // ── Inject CSS ──────────────────────────────────
@@ -143,7 +143,7 @@
       chrome.runtime.sendMessage(msg);
     } catch (err) {
       if (err.message?.includes('Extension context invalidated')) {
-        console.warn('[ScreenSnap][Widget] Extension updated — removing widget');
+        console.warn('[ScreenBolt][Widget] Extension updated — removing widget');
         removeWidget();
       }
     }

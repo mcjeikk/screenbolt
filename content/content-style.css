@@ -1,6 +1,6 @@
-/* ScreenSnap — Content Script Styles (Selection Overlay) */
+/* ScreenBolt — Content Script Styles (Selection Overlay) */
 
-#screensnap-overlay {
+#screenbolt-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -11,7 +11,7 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
-#screensnap-selection-box {
+#screenbolt-selection-box {
   display: none;
   position: fixed;
   border: 2px solid #4F46E5;
@@ -21,7 +21,7 @@
   pointer-events: none;
 }
 
-#screensnap-instructions {
+#screenbolt-instructions {
   position: fixed;
   top: 16px;
   left: 50%;

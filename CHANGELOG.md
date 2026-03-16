@@ -1,8 +1,13 @@
 # Changelog
 
-All notable changes to ScreenSnap will be documented in this file.
+All notable changes to ScreenBolt will be documented in this file.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+
+## [0.6.0] - 2026-03-16
+
+### Changed
+- **Rebrand**: Renamed project from ScreenSnap to ScreenBolt across all files, locales, store listings, and documentation
 
 ## [0.5.1] - 2026-03-16
 

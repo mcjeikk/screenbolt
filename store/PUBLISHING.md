@@ -1,4 +1,4 @@
-# ScreenSnap — Chrome Web Store Publishing Guide
+# ScreenBolt — Chrome Web Store Publishing Guide
 
 ## Prerequisites
 
@@ -12,9 +12,9 @@
 ## Step 1: Prepare the ZIP Package
 
 ```bash
-# From the screensnap/ directory
+# From the screenbolt/ directory
 # Exclude development files from the package
-zip -r screensnap.zip . \
+zip -r screenbolt.zip . \
   -x "*.git*" \
   -x "node_modules/*" \
   -x "tests/*" \
@@ -63,7 +63,7 @@ zip -r screensnap.zip . \
 
 1. Go to [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 2. Click **"New Item"**
-3. Upload `screensnap.zip`
+3. Upload `screenbolt.zip`
 
 ---
 
@@ -77,7 +77,7 @@ zip -r screensnap.zip . \
 | Field | Value |
 |---|---|
 | **Language** | English |
-| **Extension name** | ScreenSnap |
+| **Extension name** | ScreenBolt |
 | **Summary** | See `store/short-description.txt` (132 chars max) |
 | **Description** | See `store/description.txt` |
 | **Category** | Productivity |
@@ -88,7 +88,7 @@ zip -r screensnap.zip . \
 ### Privacy Tab
 
 #### Single Purpose Description
-> "ScreenSnap captures screenshots and records screen activity from browser tabs, allowing users to annotate captures and save them locally."
+> "ScreenBolt captures screenshots and records screen activity from browser tabs, allowing users to annotate captures and save them locally."
 
 #### Permission Justifications
 

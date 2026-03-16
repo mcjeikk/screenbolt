@@ -1,8 +1,8 @@
-# ScreenSnap — Testing Guide
+# ScreenBolt — Testing Guide
 
 ## Overview
 
-ScreenSnap uses a multi-layered testing strategy:
+ScreenBolt uses a multi-layered testing strategy:
 
 1. **Manual Testing** — Quick smoke tests during development
 2. **Unit Tests** — Test shared utilities and pure logic (planned)
@@ -197,7 +197,7 @@ module.exports = { launchBrowser, getExtensionId };
 // tests/e2e/basic.test.js
 const { launchBrowser, getExtensionId } = require('./helpers');
 
-describe('ScreenSnap E2E', () => {
+describe('ScreenBolt E2E', () => {
   let browser;
   let extensionId;
 
@@ -305,7 +305,7 @@ const path = require('path');
 
 const EXTENSION_PATH = path.resolve(__dirname, '../../');
 
-test.describe('ScreenSnap', () => {
+test.describe('ScreenBolt', () => {
   let context;
 
   test.beforeAll(async () => {

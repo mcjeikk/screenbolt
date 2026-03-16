@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Feature Detection Utilities
+ * @file ScreenBolt — Feature Detection Utilities
  * @description Provides cross-browser feature detection for Chrome extension APIs.
  * Uses capability checks instead of browser sniffing for forward compatibility.
  * @version 0.5.1

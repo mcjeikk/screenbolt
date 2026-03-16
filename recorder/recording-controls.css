@@ -1,6 +1,6 @@
-/* ScreenSnap Recording Controls — Floating Widget */
+/* ScreenBolt Recording Controls — Floating Widget */
 
-#screensnap-recording-widget {
+#screenbolt-recording-widget {
   position: fixed;
   top: 16px;
   left: 50%;
@@ -24,11 +24,11 @@
   transition: opacity 0.2s;
 }
 
-#screensnap-recording-widget:active {
+#screenbolt-recording-widget:active {
   cursor: grabbing;
 }
 
-#screensnap-recording-widget .ssw-rec-dot {
+#screenbolt-recording-widget .ssw-rec-dot {
   width: 10px;
   height: 10px;
   background: #EF4444;
@@ -37,7 +37,7 @@
   flex-shrink: 0;
 }
 
-#screensnap-recording-widget .ssw-rec-dot.paused {
+#screenbolt-recording-widget .ssw-rec-dot.paused {
   animation: none;
   opacity: 0.4;
 }
@@ -47,20 +47,20 @@
   50% { opacity: 0.2; }
 }
 
-#screensnap-recording-widget .ssw-timer {
+#screenbolt-recording-widget .ssw-timer {
   font-weight: 700;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   min-width: 48px;
 }
 
-#screensnap-recording-widget .ssw-divider {
+#screenbolt-recording-widget .ssw-divider {
   width: 1px;
   height: 20px;
   background: rgba(255, 255, 255, 0.15);
 }
 
-#screensnap-recording-widget button {
+#screenbolt-recording-widget button {
   background: rgba(255, 255, 255, 0.1);
   border: none;
   border-radius: 20px;
@@ -73,14 +73,14 @@
   white-space: nowrap;
 }
 
-#screensnap-recording-widget button:hover {
+#screenbolt-recording-widget button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-#screensnap-recording-widget .ssw-stop {
+#screenbolt-recording-widget .ssw-stop {
   background: #EF4444;
 }
 
-#screensnap-recording-widget .ssw-stop:hover {
+#screenbolt-recording-widget .ssw-stop:hover {
   background: #DC2626;
 }

@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Custom Error Types
+ * @file ScreenBolt — Custom Error Types
  * @description Typed error classes for structured error handling across the extension.
  * Provides error codes for programmatic handling and better debugging.
  * @version 0.5.1

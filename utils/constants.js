@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Shared Constants
+ * @file ScreenBolt — Shared Constants
  * @description Single source of truth for all constants used across the extension.
  * Import this module wherever you need message types, storage keys, or configuration values.
  * @version 0.5.0
@@ -220,7 +220,7 @@ export const BADGE_RECORDING_COLOR = '#EF4444';
 
 // ── Extension Info ──────────────────────────────────
 /** @type {string} Extension name prefix for logs and notifications */
-export const EXTENSION_NAME = 'ScreenSnap';
+export const EXTENSION_NAME = 'ScreenBolt';
 
 /** @type {string} Current version */
 export const VERSION = '0.5.1';

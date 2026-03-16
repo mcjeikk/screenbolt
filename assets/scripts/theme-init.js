@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Theme Initialization & Global Error Boundaries
+ * @file ScreenBolt — Theme Initialization & Global Error Boundaries
  * @description Auto-applies the saved theme preference before DOMContentLoaded
  * to prevent flash of unstyled/wrong-themed content. Also installs global
  * error handlers for uncaught exceptions and unhandled promise rejections.
@@ -14,13 +14,13 @@
  * Show a temporary error toast on the page.
  * @param {string} message - Error message to display
  */
-function __screenSnapShowErrorToast(message) {
+function __screenBoltShowErrorToast(message) {
   if (!document.body) return;
-  const existing = document.querySelector('.screensnap-global-error-toast');
+  const existing = document.querySelector('.screenbolt-global-error-toast');
   if (existing) existing.remove();
 
   const toast = document.createElement('div');
-  toast.className = 'screensnap-global-error-toast';
+  toast.className = 'screenbolt-global-error-toast';
   toast.setAttribute('role', 'alert');
   toast.textContent = '\u26A0\uFE0F ' + (message || 'Something went wrong');
   toast.style.cssText =
@@ -35,15 +35,15 @@ function __screenSnapShowErrorToast(message) {
 }
 
 window.addEventListener('error', (event) => {
-  console.error('[ScreenSnap] Uncaught error:', event.error || event.message);
-  __screenSnapShowErrorToast(event.message);
+  console.error('[ScreenBolt] Uncaught error:', event.error || event.message);
+  __screenBoltShowErrorToast(event.message);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason;
   const message = reason instanceof Error ? reason.message : String(reason || 'Async error');
-  console.error('[ScreenSnap] Unhandled promise rejection:', reason);
-  __screenSnapShowErrorToast(message);
+  console.error('[ScreenBolt] Unhandled promise rejection:', reason);
+  __screenBoltShowErrorToast(message);
 });
 
 // ── Theme Initialization ────────────────────────────

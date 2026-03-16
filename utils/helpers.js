@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Shared Helper Functions
+ * @file ScreenBolt — Shared Helper Functions
  * @description Utility functions used across multiple extension components.
  * Includes timestamp formatting, file size display, sanitization, and debouncing.
  * @version 0.5.0

@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — History Page v0.5.0
+ * @file ScreenBolt — History Page v0.5.0
  * @description Displays all captured screenshots and recordings with filtering, search,
  * sorting, and pagination. Uses safe DOM construction (no innerHTML for user data).
  * @version 0.5.0
@@ -56,7 +56,7 @@
       const result = await chrome.storage.local.get('historyEntries');
       allEntries = result.historyEntries || [];
     } catch (err) {
-      console.error('[ScreenSnap][History] Failed to load entries:', err);
+      console.error('[ScreenBolt][History] Failed to load entries:', err);
       allEntries = [];
     }
   }

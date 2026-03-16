@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Data Migration Utility
+ * @file ScreenBolt — Data Migration Utility
  * @description Handles data schema migrations between extension versions.
  * Called from the service worker's onInstalled handler during updates.
  * @version 0.5.1

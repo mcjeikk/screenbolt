@@ -1,4 +1,4 @@
-# ScreenSnap — Audit Checklist Results (v0.5.1)
+# ScreenBolt — Audit Checklist Results (v0.5.1)
 
 Audit performed against the checklist in `docs/BEST_PRACTICES.md` Section 14.
 
@@ -67,7 +67,7 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ✅🔧² Pass (fixed in v0.
 | 5 | ES Modules en SW | ✅🔧² | Added `"type": "module"` to manifest background. SW now uses `import` for constants, logger, helpers, storage, errors, feature-detection, and migration modules. |
 | 6 | shared/ directory | ✅ | Shared code lives in `utils/` — functionally equivalent to `shared/`. Contains: constants.js, logger.js, storage.js, helpers.js, messages.js, errors.js, feature-detection.js, migration.js. Consistent naming used throughout. |
 | 7 | Offscreen document lifecycle | ✅🔧 | Verifies existence before creating. Closes after use (v0.5.0). |
-| 8 | Double injection prevention | ✅ | `window.__screenSnapInjected` guard in content script |
+| 8 | Double injection prevention | ✅ | `window.__screenBoltInjected` guard in content script |
 
 ---
 
@@ -168,7 +168,7 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ✅🔧² Pass (fixed in v0.
 
 ---
 
-## 🚨 Específicos de ScreenSnap
+## 🚨 Específicos de ScreenBolt
 
 | # | Item | Status | Notes |
 |---|---|---|---|
@@ -179,7 +179,7 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ✅🔧² Pass (fixed in v0.
 | 5 | Recording state recovery | ✅🔧 | `onStartup` cleans stale recording state |
 | 6 | Large capture handling | ✅🔧² | Added `MAX_FULL_PAGE_HEIGHT = 15000` OOM guard in content script. `captureFullPage()` returns a user-friendly error if page exceeds limit. Prevents canvas allocation failures on very long pages. |
 | 7 | Multi-monitor | ✅ | `desktopCapture` picker handles monitor selection |
-| 8 | Content script re-injection | ✅ | `window.__screenSnapInjected` guard |
+| 8 | Content script re-injection | ✅ | `window.__screenBoltInjected` guard |
 | 9 | Context invalidated | ✅🔧 | Content script handles "Extension context invalidated" with retry and refresh banner |
 
 ---
@@ -199,7 +199,7 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ✅🔧² Pass (fixed in v0.
 | Manifest | 6 | 1 |
 | Publishing | 9 | 2 |
 | Cross-Browser | 3 | 2 |
-| ScreenSnap-Specific | 9 | 0 |
+| ScreenBolt-Specific | 9 | 0 |
 | **Total** | **83** | **11** |
 
 **Overall Score: 83/83 scoreable items passing (100%)**
@@ -221,7 +221,7 @@ Legend: ✅ Pass | ✅🔧 Pass (fixed in v0.5.0) | ✅🔧² Pass (fixed in v0.
 9. **Remote code declaration** (Publishing #8) — Full ffmpeg.wasm justification documented in PUBLISHING.md.
 10. **Data migration** (Publishing #10) — `utils/migration.js` with versioned migration runner.
 11. **Feature detection** (Cross-Browser #1) — `utils/feature-detection.js` with 10+ capability checks.
-12. **Large capture OOM guard** (ScreenSnap #6) — `MAX_FULL_PAGE_HEIGHT` limit with user-friendly error.
+12. **Large capture OOM guard** (ScreenBolt #6) — `MAX_FULL_PAGE_HEIGHT` limit with user-friendly error.
 
 ### Items remaining as 🔲 (N/A — 11):
 These items are tracked for future implementation but are not blockers:

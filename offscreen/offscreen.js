@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Offscreen Document
+ * @file ScreenBolt — Offscreen Document
  * @description Handles clipboard operations that require DOM access.
  * MV3 service workers cannot access the clipboard API directly,
  * so this offscreen document acts as a proxy for clipboard writes.

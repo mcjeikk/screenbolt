@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Background Service Worker v0.5.1 (MV3 ES Module)
+ * @file ScreenBolt — Background Service Worker v0.5.1 (MV3 ES Module)
  * @description Central coordinator for the extension. Handles capture commands,
  * keyboard shortcuts, recording state, notifications, onInstalled events,
  * and history management. Uses a message router pattern for clean dispatch.
@@ -696,7 +696,7 @@ chrome.runtime.onSuspend.addListener(() => {
 
 // ── Keepalive during recording ──────────────────
 
-const KEEPALIVE_ALARM_NAME = 'screensnap-keepalive';
+const KEEPALIVE_ALARM_NAME = 'screenbolt-keepalive';
 
 /**
  * Start a periodic alarm to keep the service worker alive during recording.

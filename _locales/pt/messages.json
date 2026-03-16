@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScreenSnap",
+    "message": "ScreenBolt",
     "description": "Extension display name"
   },
   "extensionDescription": {
@@ -56,7 +56,7 @@
     "description": "Notification title when recording is interrupted by SW termination"
   },
   "refreshBanner": {
-    "message": "ScreenSnap foi atualizado. Atualize esta página para continuar usando.",
+    "message": "ScreenBolt foi atualizado. Atualize esta página para continuar usando.",
     "description": "Banner message shown when extension context is invalidated"
   },
   "selectionInstructions": {

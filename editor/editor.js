@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Editor v0.5.0
+ * @file ScreenBolt — Editor v0.5.0
  * @description Full annotation editor with canvas-based drawing tools, PDF export,
  * undo/redo, crop, and history integration. All vanilla JS + Canvas API.
  * Includes proper canvas cleanup, Object URL revocation, and accessible UI.
@@ -10,7 +10,7 @@
   'use strict';
 
   // ── Constants ───────────────────────────────────
-  const LOG_PREFIX = '[ScreenSnap][Editor]';
+  const LOG_PREFIX = '[ScreenBolt][Editor]';
   const MIN_DRAG_DISTANCE = 3;
   const MIN_BLUR_SIZE = 2;
   const RECT_CORNER_RADIUS = 8;
@@ -728,7 +728,7 @@
       const entry = {
         id: crypto.randomUUID(),
         type: 'screenshot',
-        name: `ScreenSnap_${getTimestamp()}.png`,
+        name: `ScreenBolt_${getTimestamp()}.png`,
         timestamp: Date.now(),
         width: canvas.width,
         height: canvas.height,
@@ -823,7 +823,7 @@
     const ext = format === 'jpeg' ? 'jpg' : 'png';
     const quality = format === 'jpeg' ? JPEG_EXPORT_QUALITY : undefined;
     const dataUrl = canvas.toDataURL(mimeType, quality);
-    const filename = `ScreenSnap_${getTimestamp()}.${ext}`;
+    const filename = `ScreenBolt_${getTimestamp()}.${ext}`;
 
     try {
       await chrome.downloads.download({ url: dataUrl, filename, saveAs: true });
@@ -854,7 +854,7 @@
       const pdf = buildPDF(jpegBytes, pageW, pageH, canvas.width, canvas.height);
       const blob = new Blob([pdf], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
-      const filename = `ScreenSnap_${getTimestamp()}.pdf`;
+      const filename = `ScreenBolt_${getTimestamp()}.pdf`;
 
       try {
         await chrome.downloads.download({ url, filename, saveAs: true });

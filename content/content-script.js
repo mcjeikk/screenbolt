@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Content Script
+ * @file ScreenBolt — Content Script
  * @description Handles selection overlay for area capture and full-page scroll-and-stitch capture.
  * Injected into web pages to interact with page DOM for capturing purposes.
  * Uses AbortController for clean event listener management.
@@ -10,13 +10,13 @@
   'use strict';
 
   // Prevent double injection
-  if (window.__screenSnapInjected) return;
-  window.__screenSnapInjected = true;
+  if (window.__screenBoltInjected) return;
+  window.__screenBoltInjected = true;
 
   // ── Constants ───────────────────────────────────
   const MIN_SELECTION_SIZE = 5;
   const SCROLL_CAPTURE_DELAY_MS = 150;
-  const LOG_PREFIX = '[ScreenSnap][Content]';
+  const LOG_PREFIX = '[ScreenBolt][Content]';
   /** @type {number} Maximum page height (px) for full-page capture to prevent OOM */
   const MAX_FULL_PAGE_HEIGHT = 15000;
 
@@ -85,15 +85,15 @@
    * Show a non-intrusive banner asking the user to refresh the page.
    */
   function showRefreshBanner() {
-    if (document.getElementById('screensnap-refresh-banner')) return;
+    if (document.getElementById('screenbolt-refresh-banner')) return;
     const banner = document.createElement('div');
-    banner.id = 'screensnap-refresh-banner';
+    banner.id = 'screenbolt-refresh-banner';
     banner.style.cssText =
       'position:fixed;top:0;left:0;right:0;z-index:2147483647;' +
       'padding:10px 20px;background:#4F46E5;color:#fff;text-align:center;' +
       'font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;' +
       'font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
-    banner.textContent = 'ScreenSnap was updated. Please refresh this page to continue using it.';
+    banner.textContent = 'ScreenBolt was updated. Please refresh this page to continue using it.';
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
     closeBtn.style.cssText =
@@ -152,15 +152,15 @@
     const { signal } = selectionAbortController;
 
     selectionOverlay = document.createElement('div');
-    selectionOverlay.id = 'screensnap-overlay';
+    selectionOverlay.id = 'screenbolt-overlay';
 
     // Build instructions with safe DOM API (no innerHTML for text-only elements)
     const selectionBox = document.createElement('div');
-    selectionBox.id = 'screensnap-selection-box';
+    selectionBox.id = 'screenbolt-selection-box';
     selectionOverlay.appendChild(selectionBox);
 
     const instructions = document.createElement('div');
-    instructions.id = 'screensnap-instructions';
+    instructions.id = 'screenbolt-instructions';
     instructions.textContent = 'Click and drag to select area \u2022 ESC to cancel';
     selectionOverlay.appendChild(instructions);
 
@@ -261,7 +261,7 @@
       await safeSendMessage({
         action: 'selection-data',
         dataUrl: croppedDataUrl,
-        filename: `ScreenSnap_Selection_${getTimestamp()}.png`,
+        filename: `ScreenBolt_Selection_${getTimestamp()}.png`,
       });
     } catch (err) {
       console.error(LOG_PREFIX, 'Selection capture failed:', err);
@@ -366,7 +366,7 @@
       await safeSendMessage({
         action: 'full-page-data',
         dataUrl: stitchedDataUrl,
-        filename: `ScreenSnap_FullPage_${getTimestamp()}.png`,
+        filename: `ScreenBolt_FullPage_${getTimestamp()}.png`,
       });
 
       return { success: true };

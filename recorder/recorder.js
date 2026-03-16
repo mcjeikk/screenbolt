@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Recorder Script v0.5.0
+ * @file ScreenBolt — Recorder Script v0.5.0
  * @description Handles recording configuration, stream setup, MediaRecorder management,
  * PiP canvas compositing, and audio controls. Runs inside recorder.html as the
  * recording hub (MV3 compatible). Ensures all MediaStreams and resources are
@@ -11,7 +11,7 @@
   'use strict';
 
   // ── Constants ───────────────────────────────────
-  const LOG_PREFIX = '[ScreenSnap][Recorder]';
+  const LOG_PREFIX = '[ScreenBolt][Recorder]';
   const VIDEO_BITRATE = 5_000_000;
   const PIP_CANVAS_FPS = 30;
   const PIP_MARGIN = 20;

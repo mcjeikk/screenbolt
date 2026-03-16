@@ -1,6 +1,6 @@
-# ScreenSnap — Cross-Browser Porting Notes
+# ScreenBolt — Cross-Browser Porting Notes
 
-This document identifies Chrome-specific APIs vs standard WebExtensions APIs used by ScreenSnap, and outlines what would be needed to port to Firefox and Edge.
+This document identifies Chrome-specific APIs vs standard WebExtensions APIs used by ScreenBolt, and outlines what would be needed to port to Firefox and Edge.
 
 > **Status:** Documentation only. No porting work has been done yet.
 
@@ -70,7 +70,7 @@ These APIs work across Chrome, Firefox, and Edge with minimal or no changes:
   // Firefox-specific settings
   "browser_specific_settings": {
     "gecko": {
-      "id": "screensnap@example.com",
+      "id": "screenbolt@example.com",
       "strict_min_version": "115.0"
     }
   }
@@ -88,7 +88,7 @@ Edge is Chromium-based, so the manifest works as-is. Only changes:
 
 ```json
 {
-  // Remove auto-update URL if present (not in ScreenSnap)
+  // Remove auto-update URL if present (not in ScreenBolt)
   // Everything else is identical to Chrome
 }
 ```

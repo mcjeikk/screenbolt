@@ -1,4 +1,4 @@
-# ScreenSnap 📸
+# ScreenBolt 📸
 
 > **Free screenshot & screen recording Chrome extension.**
 > No limits. No account. No tracking. 100% local.
@@ -73,17 +73,17 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/mcjeikk/screensnap.git
-   cd screensnap
+   git clone https://github.com/mcjeikk/screenbolt.git
+   cd screenbolt
    ```
 
 2. Open Chrome and navigate to `chrome://extensions/`
 
 3. Enable **Developer mode** (toggle in top-right)
 
-4. Click **Load unpacked** and select the `screensnap/` folder
+4. Click **Load unpacked** and select the `screenbolt/` folder
 
-5. Pin ScreenSnap to your toolbar for quick access 📌
+5. Pin ScreenBolt to your toolbar for quick access 📌
 
 ### Chrome Web Store
 
@@ -94,7 +94,7 @@
 ## 🏗️ Architecture
 
 ```
-screensnap/
+screenbolt/
 ├── manifest.json            # Extension manifest (MV3)
 ├── background/
 │   └── service-worker.js    # Central message router & coordinator
@@ -155,7 +155,7 @@ screensnap/
 
 ```bash
 # Clone
-git clone https://github.com/mcjeikk/screensnap.git
+git clone https://github.com/mcjeikk/screenbolt.git
 
 # Load in Chrome
 # chrome://extensions/ → Developer mode → Load unpacked → select folder
@@ -196,7 +196,7 @@ Contributions are welcome! Here's how:
 
 ## 🔒 Privacy
 
-ScreenSnap is designed with privacy as a core principle:
+ScreenBolt is designed with privacy as a core principle:
 
 - **100% Local** — All processing happens in your browser
 - **No Server** — No data is sent to any server, ever
@@ -216,5 +216,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 <p align="center">
   Built with ❤️ and vanilla JS<br>
-  <strong>ScreenSnap</strong> — Screenshot & record, beautifully.
+  <strong>ScreenBolt</strong> — Screenshot & record, beautifully.
 </p>

@@ -1,4 +1,4 @@
-ScreenSnap — Free Screenshot & Screen Recording Tool
+ScreenBolt — Free Screenshot & Screen Recording Tool
 
 Capture, annotate, and record your screen with zero limitations. No account required, no time limits, and 100% local — your data never leaves your browser.
 
@@ -104,7 +104,7 @@ Choose between Dark Mode, Light Mode, or System Auto-detect. The theme applies c
 
 🔒 PRIVACY FIRST
 
-ScreenSnap is 100% local:
+ScreenBolt is 100% local:
 • No accounts or sign-ups
 • No data collection or tracking
 • No analytics

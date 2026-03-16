@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Message Passing Utility
+ * @file ScreenBolt — Message Passing Utility
  * @description Type-safe message sending/receiving helpers and message validation.
  * Provides consistent message format across all extension components.
  * @version 0.5.0

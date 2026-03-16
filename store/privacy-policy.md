@@ -1,16 +1,16 @@
-# ScreenSnap — Privacy Policy
+# ScreenBolt — Privacy Policy
 
 **Last Updated:** March 16, 2026
 
 ## Summary
 
-ScreenSnap does not collect, transmit, or share any user data. All processing happens locally in your browser. Period.
+ScreenBolt does not collect, transmit, or share any user data. All processing happens locally in your browser. Period.
 
 ---
 
 ## Data Collection
 
-**ScreenSnap does NOT collect:**
+**ScreenBolt does NOT collect:**
 - Personal information
 - Usage analytics or telemetry
 - Browsing history
@@ -21,7 +21,7 @@ ScreenSnap does not collect, transmit, or share any user data. All processing ha
 
 ## Data Storage
 
-All data created by ScreenSnap is stored **locally on your device** using Chrome's built-in storage APIs:
+All data created by ScreenBolt is stored **locally on your device** using Chrome's built-in storage APIs:
 
 - **Settings** are stored in `chrome.storage.sync` (synced across your Chrome devices via your Google account, if sync is enabled)
 - **Capture history metadata** (thumbnails, timestamps, filenames) is stored in `chrome.storage.local`
@@ -39,13 +39,13 @@ No data is ever sent to external servers.
 
 ## Third-Party Services
 
-ScreenSnap does not use any third-party analytics, tracking, advertising, or data processing services.
+ScreenBolt does not use any third-party analytics, tracking, advertising, or data processing services.
 
 The only external resource optionally loaded is **ffmpeg.wasm** from a CDN (jsdelivr.net) when you choose to convert a recording to MP4 format. This is a client-side WebAssembly library — no user data is sent to the CDN; only the library code is downloaded.
 
 ## Permissions
 
-ScreenSnap requests the following Chrome permissions, each with a specific purpose:
+ScreenBolt requests the following Chrome permissions, each with a specific purpose:
 
 | Permission | Purpose |
 |---|---|
@@ -61,7 +61,7 @@ ScreenSnap requests the following Chrome permissions, each with a specific purpo
 
 ## Host Permissions
 
-ScreenSnap requests `<all_urls>` host permission to enable:
+ScreenBolt requests `<all_urls>` host permission to enable:
 - Content script injection for area selection overlay on any web page
 - Full-page screenshot stitching on any web page
 - Recording controls widget injection during screen recording
@@ -70,7 +70,7 @@ This permission is used **only** when you actively initiate a capture or recordi
 
 ## Children's Privacy
 
-ScreenSnap does not knowingly collect any data from anyone, including children under 13.
+ScreenBolt does not knowingly collect any data from anyone, including children under 13.
 
 ## Changes to This Policy
 
@@ -82,4 +82,4 @@ For questions about this privacy policy, please open an issue on the project's G
 
 ---
 
-**In short:** ScreenSnap is a local tool. Nothing leaves your browser. Your captures are yours.
+**In short:** ScreenBolt is a local tool. Nothing leaves your browser. Your captures are yours.

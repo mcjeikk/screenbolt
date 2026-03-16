@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Preview Script v0.5.0
+ * @file ScreenBolt — Preview Script v0.5.0
  * @description Loads recorded video from chrome.storage, provides playback preview,
  * and offers download in WebM or MP4 (via ffmpeg.wasm lazy-loaded from CDN).
  * Properly revokes Object URLs on cleanup.
@@ -10,7 +10,7 @@
   'use strict';
 
   // ── Constants ───────────────────────────────────
-  const LOG_PREFIX = '[ScreenSnap][Preview]';
+  const LOG_PREFIX = '[ScreenBolt][Preview]';
 
   // ── State ───────────────────────────────────────
   /** @type {Blob|null} */
@@ -130,7 +130,7 @@
   function downloadWebM() {
     if (!videoBlob) return;
     const url = URL.createObjectURL(videoBlob);
-    const filename = `ScreenSnap_${getTimestamp()}.webm`;
+    const filename = `ScreenBolt_${getTimestamp()}.webm`;
     triggerDownload(url, filename);
     // Revoke after a delay to ensure download starts
     setTimeout(() => URL.revokeObjectURL(url), 5000);
@@ -194,7 +194,7 @@
       statusText.textContent = 'Done! Downloading\u2026';
 
       const url = URL.createObjectURL(mp4Blob);
-      triggerDownload(url, `ScreenSnap_${getTimestamp()}.mp4`);
+      triggerDownload(url, `ScreenBolt_${getTimestamp()}.mp4`);
       setTimeout(() => URL.revokeObjectURL(url), 5000);
 
       // Cleanup ffmpeg files

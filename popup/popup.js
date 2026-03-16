@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Popup Script v0.5.0
+ * @file ScreenBolt — Popup Script v0.5.0
  * @description Handles button clicks, recording indicator, last capture preview,
  * and settings integration for the extension popup.
  * @version 0.5.0
@@ -10,7 +10,7 @@
 
   // ── Constants ───────────────────────────────────
   const TOAST_DURATION_MS = 3000;
-  const LOG_PREFIX = '[ScreenSnap][Popup]';
+  const LOG_PREFIX = '[ScreenBolt][Popup]';
 
   // ── Init ────────────────────────────────────────
 

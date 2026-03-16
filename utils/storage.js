@@ -1,5 +1,5 @@
 /**
- * @file ScreenSnap — Storage Utility
+ * @file ScreenBolt — Storage Utility
  * @description Wrapper around chrome.storage with error handling, defaults, and typed accessors.
  * Centralizes all storage operations for the extension.
  * @version 0.5.0
