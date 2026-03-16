@@ -85,8 +85,35 @@
    * Bind toggle interactions for PiP sub-options visibility.
    */
   function bindRecordingToggles() {
-    document.getElementById('opt-pip').addEventListener('change', (e) => {
+    // Pre-request mic permission when toggle is turned ON (needs visible UI for prompt)
+    const micToggle = document.getElementById('opt-mic');
+    if (micToggle) {
+      micToggle.addEventListener('change', async (e) => {
+        if (e.target.checked) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(t => t.stop());
+          } catch {
+            e.target.checked = false;
+            showToast('Microphone permission denied');
+          }
+        }
+      });
+    }
+
+    document.getElementById('opt-pip').addEventListener('change', async (e) => {
       document.getElementById('pip-options').style.display = e.target.checked ? 'block' : 'none';
+      // Pre-request camera permission when PiP is turned ON
+      if (e.target.checked) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream.getTracks().forEach(t => t.stop());
+        } catch {
+          e.target.checked = false;
+          document.getElementById('pip-options').style.display = 'none';
+          showToast('Camera permission denied');
+        }
+      }
     });
   }
 
@@ -119,28 +146,6 @@
         resolution: document.getElementById('opt-resolution').value,
         countdown: document.getElementById('opt-countdown').checked,
       };
-
-      // Pre-request mic permission from popup (offscreen docs can't show prompts)
-      if (config.microphone) {
-        try {
-          const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          testStream.getTracks().forEach(t => t.stop());
-        } catch (micErr) {
-          console.warn(LOG_PREFIX, 'Mic permission denied:', micErr.message);
-          config.microphone = false;
-        }
-      }
-
-      // Pre-request webcam permission for PiP
-      if (config.pip && config.source !== 'camera') {
-        try {
-          const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          testStream.getTracks().forEach(t => t.stop());
-        } catch (camErr) {
-          console.warn(LOG_PREFIX, 'Camera permission denied:', camErr.message);
-          config.pip = false;
-        }
-      }
 
       // Save config for next time
       await chrome.storage.session.set({ lastRecordingConfig: config });

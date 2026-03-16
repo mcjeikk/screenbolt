@@ -137,80 +137,11 @@
   }
 
   /**
-   * Download as MP4 using ffmpeg.wasm (lazy-loaded from CDN).
-   * Shows progress bar during conversion.
+   * Download as MP4 — not yet available in MV3 due to ffmpeg.wasm Worker restrictions.
+   * WebM is universally supported. MP4 conversion will be added in a future version.
    */
-  async function downloadMP4() {
-    if (!videoBlob) return;
-
-    const progressContainer = document.getElementById('mp4-progress');
-    const progressBar = document.getElementById('mp4-progress-bar');
-    const statusText = document.getElementById('mp4-status');
-    const btn = document.getElementById('btn-download-mp4');
-
-    btn.disabled = true;
-    progressContainer.style.display = 'block';
-    statusText.textContent = 'Loading ffmpeg.wasm from CDN\u2026';
-    progressBar.style.width = '10%';
-
-    try {
-      // FFmpegWASM and FFmpegUtil are loaded via UMD scripts in preview.html
-      const { FFmpeg } = (typeof FFmpegWASM !== 'undefined') ? FFmpegWASM : {};
-      const { fetchFile, toBlobURL } = (typeof FFmpegUtil !== 'undefined') ? FFmpegUtil : {};
-
-      if (!FFmpeg || !toBlobURL) {
-        throw new Error('ffmpeg.wasm libraries not loaded');
-      }
-
-      progressBar.style.width = '25%';
-      statusText.textContent = 'Initializing ffmpeg\u2026';
-
-      const ffmpeg = new FFmpeg();
-
-      ffmpeg.on('progress', ({ progress }) => {
-        const pct = Math.min(95, 30 + progress * 65);
-        progressBar.style.width = `${pct}%`;
-        statusText.textContent = `Converting\u2026 ${Math.round(progress * 100)}%`;
-      });
-
-      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
-
-      progressBar.style.width = '30%';
-      statusText.textContent = 'Converting to MP4\u2026';
-
-      const inputData = await fetchFile(videoBlob);
-      await ffmpeg.writeFile('input.webm', inputData);
-      await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', 'output.mp4']);
-
-      const data = await ffmpeg.readFile('output.mp4');
-      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
-
-      progressBar.style.width = '100%';
-      statusText.textContent = 'Done! Downloading\u2026';
-
-      const url = URL.createObjectURL(mp4Blob);
-      triggerDownload(url, `ScreenBolt_${getTimestamp()}.mp4`);
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-      // Cleanup ffmpeg files
-      await ffmpeg.deleteFile('input.webm');
-      await ffmpeg.deleteFile('output.mp4');
-
-      setTimeout(() => {
-        progressContainer.style.display = 'none';
-        btn.disabled = false;
-      }, 2000);
-
-    } catch (err) {
-      console.error(LOG_PREFIX, 'MP4 conversion failed:', err);
-      statusText.textContent = `\u274C Conversion failed: ${err.message}`;
-      progressBar.style.width = '0%';
-      btn.disabled = false;
-    }
+  function downloadMP4() {
+    alert('MP4 conversion is coming soon! For now, WebM is supported by all major players (Chrome, Firefox, VLC, etc.).');
   }
 
   /** Discard the recording and close the tab. */
