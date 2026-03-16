@@ -141,9 +141,10 @@ function downloadWebM() {
  * Shows progress bar during conversion.
  */
 /**
- * Download as MP4 using ffmpeg.wasm via a sandboxed iframe.
- * MV3 CSP blocks blob: scripts in extension pages, but sandbox pages
- * have relaxed CSP and can load ffmpeg from CDN freely.
+ * Download as MP4 using ffmpeg.wasm (fully bundled locally).
+ * All files are served from the extension itself — no CDN, no sandbox.
+ * CSP: 'wasm-unsafe-eval' allows WASM compilation.
+ * UMD globals: FFmpegWASM.FFmpeg, FFmpegUtil.toBlobURL/fetchFile
  */
 async function downloadMP4() {
   if (!videoBlob) return;
@@ -155,84 +156,62 @@ async function downloadMP4() {
 
   btn.disabled = true;
   progressContainer.style.display = 'block';
-  statusText.textContent = 'Initializing converter\u2026';
-  progressBar.style.width = '5%';
+  statusText.textContent = 'Initializing ffmpeg\u2026';
+  progressBar.style.width = '10%';
 
   try {
-    // Create sandboxed iframe for ffmpeg (sandbox has relaxed CSP)
-    let iframe = document.getElementById('mp4-sandbox');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'mp4-sandbox';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-    iframe.src = chrome.runtime.getURL('sandbox/mp4-converter.html');
+    const { FFmpeg } = FFmpegWASM;
+    const { fetchFile } = FFmpegUtil;
 
-    // Wait for iframe to signal ready
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Converter iframe timeout')), 15000);
-      const handler = (event) => {
-        if (event.data?.type === 'mp4-converter-ready') {
-          clearTimeout(timeout);
-          window.removeEventListener('message', handler);
-          resolve();
-        }
-      };
-      window.addEventListener('message', handler);
+    const ffmpeg = new FFmpeg();
+
+    ffmpeg.on('progress', ({ progress }) => {
+      const pct = Math.min(95, 30 + progress * 65);
+      progressBar.style.width = `${pct}%`;
+      statusText.textContent = `Converting\u2026 ${Math.round(progress * 100)}%`;
     });
 
-    statusText.textContent = 'Loading ffmpeg (~30MB first time)\u2026';
-    progressBar.style.width = '10%';
+    progressBar.style.width = '20%';
+    statusText.textContent = 'Loading ffmpeg core\u2026';
 
-    // Convert blob to ArrayBuffer and send to sandbox
-    const webmData = await videoBlob.arrayBuffer();
-
-    // Listen for progress and result from sandbox
-    const mp4Data = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('MP4 conversion timeout (5 min)')), 300000);
-      const handler = (event) => {
-        const msg = event.data;
-        if (!msg) return;
-
-        if (msg.type === 'mp4-progress') {
-          if (msg.stage === 'loading') {
-            const pct = Math.round(10 + msg.progress * 20);
-            progressBar.style.width = `${pct}%`;
-            statusText.textContent = 'Downloading ffmpeg core\u2026';
-          } else if (msg.stage === 'converting') {
-            const pct = Math.round(30 + msg.progress * 65);
-            progressBar.style.width = `${pct}%`;
-            statusText.textContent = `Converting\u2026 ${Math.round(msg.progress * 100)}%`;
-          }
-        } else if (msg.type === 'mp4-result') {
-          clearTimeout(timeout);
-          window.removeEventListener('message', handler);
-          if (msg.success) {
-            resolve(msg.data);
-          } else {
-            reject(new Error(msg.error || 'Conversion failed'));
-          }
-        }
-      };
-      window.addEventListener('message', handler);
-
-      // Send WebM data to sandbox (transfer, not copy)
-      iframe.contentWindow.postMessage(
-        { type: 'convert-to-mp4', webmData },
-        '*',
-        [webmData]
-      );
+    // All files are local — no CDN needed
+    // The UMD ffmpeg.js auto-detects publicPath from its own script src,
+    // so 814.ffmpeg.js (Worker) loads from the same directory.
+    // coreURL + wasmURL point to local bundled files.
+    await ffmpeg.load({
+      coreURL: chrome.runtime.getURL('lib/ffmpeg/ffmpeg-core.js'),
+      wasmURL: chrome.runtime.getURL('lib/ffmpeg/ffmpeg-core.wasm'),
     });
 
-    // Download MP4
-    const mp4Blob = new Blob([mp4Data], { type: 'video/mp4' });
+    progressBar.style.width = '30%';
+    statusText.textContent = 'Converting to MP4\u2026';
+
+    const inputData = await fetchFile(videoBlob);
+    await ffmpeg.writeFile('input.webm', inputData);
+    await ffmpeg.exec([
+      '-i', 'input.webm',
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '23',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      'output.mp4'
+    ]);
+
+    const data = await ffmpeg.readFile('output.mp4');
+    const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+
     progressBar.style.width = '100%';
     statusText.textContent = 'Done! Downloading\u2026';
 
     const url = URL.createObjectURL(mp4Blob);
     triggerDownload(url, `ScreenBolt_${getTimestamp()}.mp4`);
     setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    // Cleanup
+    await ffmpeg.deleteFile('input.webm');
+    await ffmpeg.deleteFile('output.mp4');
+    ffmpeg.terminate();
 
     setTimeout(() => {
       progressContainer.style.display = 'none';
