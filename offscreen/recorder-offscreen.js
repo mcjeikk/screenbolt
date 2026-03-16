@@ -137,8 +137,18 @@
       }
     }
 
-    // PiP webcam is handled by the content script (visible on page, captured by tabCapture)
-    // Offscreen documents can't render video frames (hidden = no decode)
+    // PiP webcam — acquire in offscreen (extension origin, permission already granted)
+    if (config.pip && config.source !== 'camera') {
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 360 }, height: { ideal: 360 } },
+          audio: false,
+        });
+        console.info(LOG_PREFIX, 'Webcam acquired for PiP');
+      } catch (err) {
+        console.warn(LOG_PREFIX, 'Webcam not available for PiP:', err.message);
+      }
+    }
 
     combinedStream = buildCombinedStream(mainStream, micStream, webcamStream, config);
 
@@ -269,6 +279,8 @@
 
   /**
    * Create a PiP composited stream using Canvas.
+   * Uses setInterval instead of requestAnimationFrame because offscreen
+   * documents are hidden and don't get rAF callbacks reliably.
    * @param {MediaStream} mainVideoStream - Screen/tab video stream
    * @param {MediaStream} webcamVideoStream - Webcam video stream
    * @param {string} position - PiP position
@@ -287,6 +299,10 @@
 
     screenVideo.srcObject = new MediaStream([mainTrack]);
     camVideo.srcObject = webcamVideoStream;
+
+    // Explicitly play both videos — hidden documents may not autoplay
+    screenVideo.play().catch(err => console.warn(LOG_PREFIX, 'Screen video play failed:', err.message));
+    camVideo.play().catch(err => console.warn(LOG_PREFIX, 'Webcam video play failed:', err.message));
 
     const ctx = canvas.getContext('2d');
     const bubbleSize = PIP_SIZES[sizeStr] || PIP_SIZES.medium;
@@ -323,11 +339,11 @@
       ctx.strokeStyle = 'rgba(255,255,255,0.8)';
       ctx.lineWidth = 3;
       ctx.stroke();
-
-      pipAnimFrame = requestAnimationFrame(drawFrame);
     }
 
-    drawFrame();
+    // Use setInterval at ~30fps (33ms) — offscreen docs don't get rAF reliably
+    pipAnimFrame = setInterval(drawFrame, 33);
+
     return canvas.captureStream(PIP_CANVAS_FPS);
   }
 
@@ -486,7 +502,7 @@
    */
   function cleanupStreams() {
     if (pipAnimFrame) {
-      cancelAnimationFrame(pipAnimFrame);
+      clearInterval(pipAnimFrame);
       pipAnimFrame = null;
     }
 

@@ -24,6 +24,7 @@
     bindRecordingToggles();
     bindStartRecording();
     bindFooterButtons();
+    await loadRecordingConfig();
     await loadSavedRecordingConfig();
     await checkRecordingStatus();
     await showLastCapture();
@@ -109,7 +110,7 @@
   }
 
   function bindRecordingToggles() {
-    // Mic toggle — check permission when enabled
+    // Mic toggle — check permission when enabled, save state
     const micToggle = document.getElementById('opt-mic');
     if (micToggle) {
       micToggle.addEventListener('change', async (e) => {
@@ -118,12 +119,14 @@
           if (!granted) {
             e.target.checked = false;
             openPermissionsPage('microphone');
+            return;
           }
         }
+        saveRecordingConfig();
       });
     }
 
-    // PiP toggle — check camera permission when enabled
+    // PiP toggle — check camera permission when enabled, save state
     document.getElementById('opt-pip').addEventListener('change', async (e) => {
       document.getElementById('pip-options').style.display = e.target.checked ? 'block' : 'none';
       if (e.target.checked) {
@@ -132,9 +135,55 @@
           e.target.checked = false;
           document.getElementById('pip-options').style.display = 'none';
           openPermissionsPage('camera');
+          return;
         }
       }
+      saveRecordingConfig();
     });
+  }
+
+  /**
+   * Save current toggle states to chrome.storage.local recordingConfig.
+   */
+  function saveRecordingConfig() {
+    const config = {
+      microphone: document.getElementById('opt-mic')?.checked ?? false,
+      pip: document.getElementById('opt-pip')?.checked ?? false,
+    };
+    chrome.storage.local.set({ recordingConfig: config });
+  }
+
+  /**
+   * Load saved toggle states from chrome.storage.local and apply them,
+   * respecting current permission state.
+   */
+  async function loadRecordingConfig() {
+    try {
+      const result = await chrome.storage.local.get('recordingConfig');
+      const config = result.recordingConfig;
+      if (!config) return;
+
+      // Restore mic toggle if saved ON and permission is granted
+      if (config.microphone) {
+        const micGranted = await isPermissionGranted('microphone');
+        const micToggle = document.getElementById('opt-mic');
+        if (micToggle && micGranted) {
+          micToggle.checked = true;
+        }
+      }
+
+      // Restore pip toggle if saved ON and camera permission is granted
+      if (config.pip) {
+        const camGranted = await isPermissionGranted('camera');
+        const pipToggle = document.getElementById('opt-pip');
+        if (pipToggle && camGranted) {
+          pipToggle.checked = true;
+          document.getElementById('pip-options').style.display = 'block';
+        }
+      }
+    } catch {
+      // Non-critical
+    }
   }
 
   // ── Start Recording ─────────────────────────────
