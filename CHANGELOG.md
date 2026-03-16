@@ -1,4 +1,10 @@
 # Changelog
+## [0.6.2] — 2026-03-16
+
+### Fixed
+- **CSP compliance**: Bundled ffmpeg.wasm wrapper locally instead of loading from CDN (Chrome MV3 blocks external scripts in CSP)
+- MP4 conversion now works — ffmpeg/util loaded as UMD scripts, core.wasm fetched on-demand via blob URL
+
 
 All notable changes to ScreenBolt will be documented in this file.
 

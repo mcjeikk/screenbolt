@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "default_locale": "en",
   "minimum_chrome_version": "116",
   "icons": {
@@ -35,7 +35,9 @@
   "optional_permissions": [
     "notifications"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "commands": {
     "capture-visible": {
       "suggested_key": {
@@ -58,11 +60,15 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["recorder/recording-controls.css"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "recorder/recording-controls.css"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

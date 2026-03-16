@@ -154,14 +154,13 @@
     progressBar.style.width = '10%';
 
     try {
-      const { FFmpeg } = await import(
-        /* webpackIgnore: true */
-        'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm'
-      );
-      const { fetchFile, toBlobURL } = await import(
-        /* webpackIgnore: true */
-        'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm'
-      );
+      // FFmpegWASM and FFmpegUtil are loaded via UMD scripts in preview.html
+      const { FFmpeg } = (typeof FFmpegWASM !== 'undefined') ? FFmpegWASM : {};
+      const { fetchFile, toBlobURL } = (typeof FFmpegUtil !== 'undefined') ? FFmpegUtil : {};
+
+      if (!FFmpeg || !toBlobURL) {
+        throw new Error('ffmpeg.wasm libraries not loaded');
+      }
 
       progressBar.style.width = '25%';
       statusText.textContent = 'Initializing ffmpeg\u2026';
