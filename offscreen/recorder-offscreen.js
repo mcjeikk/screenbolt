@@ -127,34 +127,26 @@
 
     mainStream = await acquireMainStream(config);
 
-    // Microphone — check permission first (offscreen can't show prompts)
+    // Microphone — getUserMedia directly (permissions granted via permissions page)
     if (config.microphone) {
       try {
-        const micPerm = await navigator.permissions.query({ name: 'microphone' });
-        if (micPerm.state === 'granted') {
-          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } else {
-          console.info(LOG_PREFIX, 'Mic permission not granted, skipping (use Grant Permissions button)');
-        }
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.info(LOG_PREFIX, 'Microphone acquired');
       } catch (err) {
-        console.warn(LOG_PREFIX, 'Mic access error:', err.message);
+        console.warn(LOG_PREFIX, 'Mic not available:', err.message, '(use Grant Mic/Camera Access button)');
       }
     }
 
-    // Webcam for PiP — check permission first
+    // Webcam for PiP — getUserMedia directly
     if (config.pip && config.source !== 'camera') {
       try {
-        const camPerm = await navigator.permissions.query({ name: 'camera' });
-        if (camPerm.state === 'granted') {
-          webcamStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 320, height: 320 },
-            audio: false,
-          });
-        } else {
-          console.info(LOG_PREFIX, 'Camera permission not granted, skipping (use Grant Permissions button)');
-        }
+        webcamStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 320, height: 320 },
+          audio: false,
+        });
+        console.info(LOG_PREFIX, 'Webcam acquired for PiP');
       } catch (err) {
-        console.warn(LOG_PREFIX, 'Webcam for PiP error:', err.message);
+        console.warn(LOG_PREFIX, 'Webcam not available:', err.message, '(use Grant Mic/Camera Access button)');
       }
     }
 
