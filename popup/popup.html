@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=320">
+  <title>ScreenSnap</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <img src="../assets/icons/icon-32.png" alt="ScreenSnap" class="logo">
+      <h1>ScreenSnap</h1>
+    </header>
+
+    <section class="section">
+      <h2>📸 Screenshot</h2>
+      <div class="button-group">
+        <button id="btn-visible" class="btn btn-primary" title="Alt+Shift+V">
+          <span class="btn-icon">🖥️</span>
+          <span class="btn-text">Visible Area</span>
+          <span class="btn-shortcut">Alt+Shift+V</span>
+        </button>
+        <button id="btn-full" class="btn btn-primary" title="Alt+Shift+F">
+          <span class="btn-icon">📄</span>
+          <span class="btn-text">Full Page</span>
+          <span class="btn-shortcut">Alt+Shift+F</span>
+        </button>
+        <button id="btn-selection" class="btn btn-primary" title="Alt+Shift+S">
+          <span class="btn-icon">✂️</span>
+          <span class="btn-text">Selection</span>
+          <span class="btn-shortcut">Alt+Shift+S</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>🎥 Record</h2>
+      <div class="button-group">
+        <button id="btn-record-tab" class="btn btn-secondary" disabled>
+          <span class="btn-icon">📑</span>
+          <span class="btn-text">Current Tab</span>
+          <span class="badge">Soon</span>
+        </button>
+        <button id="btn-record-screen" class="btn btn-secondary" disabled>
+          <span class="btn-icon">🖥️</span>
+          <span class="btn-text">Full Screen</span>
+          <span class="badge">Soon</span>
+        </button>
+        <button id="btn-record-cam" class="btn btn-secondary" disabled>
+          <span class="btn-icon">📷</span>
+          <span class="btn-text">Camera</span>
+          <span class="badge">Soon</span>
+        </button>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <button id="btn-history" class="btn-link">📁 History</button>
+      <button id="btn-settings" class="btn-link">⚙️ Settings</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

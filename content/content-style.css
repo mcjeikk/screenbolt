@@ -1,0 +1,39 @@
+/* ScreenSnap — Content Script Styles (Selection Overlay) */
+
+#screensnap-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483647;
+  cursor: crosshair;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+#screensnap-selection-box {
+  display: none;
+  position: fixed;
+  border: 2px solid #4F46E5;
+  background: rgba(79, 70, 229, 0.08);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  z-index: 2147483647;
+  pointer-events: none;
+}
+
+#screensnap-instructions {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 2147483647;
+  backdrop-filter: blur(4px);
+}
