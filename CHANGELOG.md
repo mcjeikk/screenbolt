@@ -4,6 +4,12 @@ All notable changes to ScreenBolt will be documented in this file.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.6.1] - 2026-03-16
+
+### Fixed
+- **Tab recording black video**: Recording now captures the original source tab instead of the recorder page itself. The popup saves the active tab ID to session storage before opening the recorder, and the recorder reads it back to pass as `targetTabId` to `chrome.tabCapture.getMediaStreamId()`
+- **MP4 conversion failed (CSP)**: Updated Content Security Policy to allow `https://cdn.jsdelivr.net` for loading ffmpeg.wasm from CDN. Previously `script-src 'self'` blocked the dynamic import, causing "Failed to fetch dynamically imported module" errors
+
 ## [0.6.0] - 2026-03-16
 
 ### Changed

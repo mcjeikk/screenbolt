@@ -61,9 +61,23 @@
 
   /**
    * Open the recorder configuration page with a pre-selected source.
+   * Saves the current tab ID to session storage so the recorder can capture
+   * the correct tab instead of capturing itself.
    * @param {string} source - Recording source ('tab' | 'screen' | 'camera')
    */
-  function openRecorder(source) {
+  async function openRecorder(source) {
+    // Save the current (active) tab ID BEFORE opening the recorder tab.
+    // This is critical for tab capture: the recorder tab will become active,
+    // so we must tell it which tab to capture via storage.
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id) {
+        await chrome.storage.session.set({ recordingTargetTabId: activeTab.id });
+      }
+    } catch (err) {
+      console.warn(LOG_PREFIX, 'Could not save target tab ID:', err);
+    }
+
     const url = chrome.runtime.getURL(`recorder/recorder.html?source=${encodeURIComponent(source)}`);
     chrome.tabs.create({ url });
     window.close();

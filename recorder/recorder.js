@@ -346,14 +346,30 @@
   }
 
   /**
-   * Capture the current tab via chrome.tabCapture API.
+   * Capture the source tab via chrome.tabCapture API.
+   * Reads the target tab ID from session storage (saved by popup before opening recorder).
+   * This ensures we capture the user's original tab, not the recorder tab itself.
    * @param {Object} constraints - Video resolution constraints
    * @param {boolean} includeAudio - Whether to capture tab audio
    * @returns {Promise<MediaStream>}
    */
   async function getTabStream(constraints, includeAudio) {
+    // Read the target tab ID saved by popup.js before opening this recorder tab.
+    // Without this, getMediaStreamId captures the active tab (the recorder itself → black video).
+    let targetTabId;
+    try {
+      const result = await chrome.storage.session.get('recordingTargetTabId');
+      targetTabId = result.recordingTargetTabId || undefined;
+    } catch {
+      targetTabId = undefined;
+    }
+
+    if (!targetTabId) {
+      console.warn(LOG_PREFIX, 'No target tab ID found — capture may show black video');
+    }
+
     const streamId = await new Promise((resolve, reject) => {
-      chrome.tabCapture.getMediaStreamId({ targetTabId: undefined }, (id) => {
+      chrome.tabCapture.getMediaStreamId({ targetTabId }, (id) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
         } else {
