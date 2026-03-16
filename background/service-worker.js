@@ -1,12 +1,20 @@
 /**
- * @file ScreenBolt — Background Service Worker v0.5.1 (MV3 ES Module)
+ * @file ScreenBolt — Background Service Worker v0.7.0 (MV3 ES Module)
  * @description Central coordinator for the extension. Handles capture commands,
- * keyboard shortcuts, recording state, notifications, onInstalled events,
- * and history management. Uses a message router pattern for clean dispatch.
+ * keyboard shortcuts, inline recording orchestration (popup → offscreen → widget),
+ * notifications, onInstalled events, and history management.
+ *
+ * Recording flow (v0.7.0):
+ * 1. Popup sends 'start-recording' with config
+ * 2. SW gets tabCapture streamId (user gesture chain from popup click)
+ * 3. SW creates offscreen document and passes streamId + config
+ * 4. Offscreen runs MediaRecorder, SW injects floating widget into user's tab
+ * 5. Widget controls → SW → offscreen (pause/mute/stop)
+ * 6. On stop: offscreen serializes to storage, SW opens preview page
  *
  * NOTE: Service workers can terminate after 30s of inactivity.
  * State is persisted via chrome.storage, not global variables.
- * @version 0.5.1
+ * @version 0.7.0
  */
 
 // ── ES Module Imports ───────────────────────────────
@@ -28,14 +36,13 @@ import { runMigrations } from '../utils/migration.js';
 // ── Logger ──────────────────────────────────────────
 const log = createLogger('SW');
 
-// ── Init Promise (ensure settings cache is ready before handling events) ──
+// ── Init Promise ────────────────────────────────────
 
-/** @type {Object} Cached settings loaded at startup */
+/** @type {Object} Cached settings */
 let settingsCache = { ...DEFAULT_SETTINGS };
 
 /**
  * Initialization promise — loads settings into cache before any handler runs.
- * All event handlers await this before operating on settings.
  * @type {Promise<void>}
  */
 const initPromise = chrome.storage.sync.get(STORAGE_KEYS.SETTINGS).then((result) => {
@@ -45,36 +52,34 @@ const initPromise = chrome.storage.sync.get(STORAGE_KEYS.SETTINGS).then((result)
   log.warn('Failed to load settings cache, using defaults:', err.message);
 });
 
-// Listen for settings changes to keep cache in sync
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes[STORAGE_KEYS.SETTINGS]) {
     settingsCache = { ...DEFAULT_SETTINGS, ...(changes[STORAGE_KEYS.SETTINGS].newValue || {}) };
-    log.debug('Settings cache updated from storage change');
+    log.debug('Settings cache updated');
   }
 });
 
 /**
- * Get cached settings (fast, synchronous after init).
- * Falls back to chrome.storage.sync if cache isn't ready.
- * @returns {Promise<Object>} Merged settings
+ * Get cached settings.
+ * @returns {Promise<Object>}
  */
 async function getCachedSettings() {
   await initPromise;
   return settingsCache;
 }
 
-// ── Recording State (session storage for SW restart resilience) ──
+// ── Recording State (session storage) ───────────────
 
 /**
- * Get recording state from session storage (survives SW restart within session).
- * @returns {Promise<{isRecording: boolean, recorderTabId: number|null, recordingTargetTabId: number|null}>}
+ * Get recording state from session storage.
+ * @returns {Promise<{isRecording: boolean, targetTabId: number|null}>}
  */
 async function getRecordingState() {
   try {
     const result = await chrome.storage.session.get('recordingState');
-    return result.recordingState || { isRecording: false, recorderTabId: null, recordingTargetTabId: null };
+    return result.recordingState || { isRecording: false, targetTabId: null };
   } catch {
-    return { isRecording: false, recorderTabId: null, recordingTargetTabId: null };
+    return { isRecording: false, targetTabId: null };
   }
 }
 
@@ -88,7 +93,7 @@ async function setRecordingState(updates) {
   await chrome.storage.session.set({ recordingState: { ...current, ...updates } });
 }
 
-// ── onInstalled — Welcome page, default settings & migrations ───
+// ── onInstalled ─────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   await initPromise;
@@ -109,8 +114,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     const currentVersion = chrome.runtime.getManifest().version;
     const previousVersion = details.previousVersion || '0.0.0';
     log.info(`Extension updated to v${currentVersion} from v${previousVersion}`);
-
-    // Run data migrations
     await runMigrations(previousVersion, currentVersion);
   }
 });
@@ -143,24 +146,21 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
-// ── Message Router (Pub/Sub Pattern) ────────────────
+// ── Message Router ──────────────────────────────────
 
-/** @type {Map<string, Function>} Handler registry */
+/** @type {Map<string, Function>} */
 const messageHandlers = new Map();
 
 /**
- * Register a message handler for a specific action type.
+ * Register a message handler.
  * @param {string} action - Message action type
- * @param {Function} handler - Async handler function (payload, sender) => response
+ * @param {Function} handler - (payload, sender) => response
  */
 function registerHandler(action, handler) {
-  if (messageHandlers.has(action)) {
-    log.warn(`Handler already registered for: ${action}`);
-  }
   messageHandlers.set(action, handler);
 }
 
-// Register all handlers
+// Screenshot handlers
 registerHandler(MESSAGE_TYPES.CAPTURE_VISIBLE, () => captureVisibleArea());
 registerHandler(MESSAGE_TYPES.CAPTURE_FULL_PAGE, (msg, sender) => initiateFullPageCapture(sender.tab?.id));
 registerHandler(MESSAGE_TYPES.CAPTURE_SELECTION, (msg, sender) => initiateSelectionCapture(sender.tab?.id));
@@ -168,38 +168,53 @@ registerHandler(MESSAGE_TYPES.FULL_PAGE_DATA, (msg) => processCapture(msg.dataUr
 registerHandler(MESSAGE_TYPES.SELECTION_DATA, (msg) => processCapture(msg.dataUrl, msg.filename));
 registerHandler(MESSAGE_TYPES.SAVE_CAPTURE, (msg) => saveCapture(msg.dataUrl, msg.filename, msg.format));
 registerHandler(MESSAGE_TYPES.COPY_TO_CLIPBOARD, (msg) => copyToClipboard(msg.dataUrl));
-registerHandler(MESSAGE_TYPES.REQUEST_DESKTOP_CAPTURE, (_msg, sender) => requestDesktopCapture(sender));
-registerHandler(MESSAGE_TYPES.RECORDING_STARTED, (_msg, sender) => onRecordingStarted(sender));
-registerHandler(MESSAGE_TYPES.RECORDING_PAUSED, () => onRecordingPaused());
-registerHandler(MESSAGE_TYPES.RECORDING_RESUMED, () => onRecordingResumed());
-registerHandler(MESSAGE_TYPES.RECORDING_STOPPED, () => onRecordingStopped());
+
+// Recording handlers (new inline flow)
+registerHandler('start-recording', (msg, sender) => handleStartRecording(msg.config, sender));
 registerHandler(MESSAGE_TYPES.GET_RECORDING_STATUS, async () => {
   const state = await getRecordingState();
   return { success: true, isRecording: state.isRecording };
 });
-registerHandler(MESSAGE_TYPES.WIDGET_PAUSE, () => forwardToRecorder(MESSAGE_TYPES.TOGGLE_PAUSE));
-registerHandler(MESSAGE_TYPES.WIDGET_RESUME, () => forwardToRecorder(MESSAGE_TYPES.TOGGLE_PAUSE));
-registerHandler(MESSAGE_TYPES.WIDGET_MUTE, () => forwardToRecorder('toggle-mute'));
-registerHandler(MESSAGE_TYPES.WIDGET_STOP, () => forwardToRecorder(MESSAGE_TYPES.STOP_RECORDING));
+
+// Widget control forwarding → offscreen
+registerHandler(MESSAGE_TYPES.WIDGET_PAUSE, () => forwardToOffscreen('offscreen-toggle-pause'));
+registerHandler(MESSAGE_TYPES.WIDGET_RESUME, () => forwardToOffscreen('offscreen-toggle-pause'));
+registerHandler(MESSAGE_TYPES.WIDGET_MUTE, () => forwardToOffscreen('offscreen-toggle-mute'));
+registerHandler(MESSAGE_TYPES.WIDGET_STOP, () => handleStopRecording());
+
+// Timer request from widget
+registerHandler('get-recording-time', () => forwardToOffscreen('offscreen-get-time'));
+
+// Offscreen recording complete
+registerHandler('offscreen-recording-complete', (msg) => onRecordingComplete(msg.duration, msg.size));
+
+// History
 registerHandler(MESSAGE_TYPES.ADD_HISTORY_ENTRY, (msg) => addHistoryEntry(msg.entry));
+
+// Recording state notifications (badge updates)
+registerHandler(MESSAGE_TYPES.RECORDING_PAUSED, () => onRecordingPaused());
+registerHandler(MESSAGE_TYPES.RECORDING_RESUMED, () => onRecordingResumed());
+
+// Misc
 registerHandler(MESSAGE_TYPES.NOTIFICATION_CLICK, () => ({ success: true }));
 
 // Main message listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message.action !== 'string') {
-    log.warn('Received invalid message:', message);
     sendResponse({ success: false, error: 'Invalid message format' });
     return false;
   }
 
   const handler = messageHandlers.get(message.action);
   if (!handler) {
-    log.warn('No handler for action:', message.action);
+    // Don't warn for offscreen-internal messages that pass through
+    if (!message.action.startsWith('offscreen-')) {
+      log.warn('No handler for action:', message.action);
+    }
     sendResponse({ success: false, error: `Unknown action: ${message.action}` });
     return false;
   }
 
-  // Ensure init is complete before handling
   initPromise.then(() => handler(message, sender))
     .then((result) => sendResponse(result))
     .catch((err) => {
@@ -210,35 +225,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: false, error: err.message });
     });
 
-  return true; // Keep channel open for async response
+  return true;
 });
 
-// ── Content Script Injection (dynamic — no manifest content_scripts) ────
+// ── Content Script Injection ────────────────────────
 
 /**
  * Dynamically inject the content script and CSS into a tab.
- * Uses a guard in the content script to prevent double-initialization.
  * @param {number} tabId - Target tab ID
- * @returns {Promise<boolean>} True if injection succeeded
- * @throws {ExtensionError} If the tab URL is restricted
+ * @returns {Promise<boolean>}
  */
 async function ensureContentScript(tabId) {
   try {
     const tab = await chrome.tabs.get(tabId);
     const url = tab.url || '';
-    if (
-      !url ||
-      url.startsWith('chrome://') ||
-      url.startsWith('chrome-extension://') ||
-      url.startsWith('about:') ||
-      url.startsWith('edge://') ||
-      url.startsWith('devtools://')
-    ) {
-      throw new ExtensionError(
-        'Cannot inject content script into restricted URL',
-        ErrorCodes.RESTRICTED_URL,
-        { url },
-      );
+    if (isRestrictedUrl(url)) {
+      log.warn('Cannot inject into restricted URL:', url);
+      return false;
     }
 
     await chrome.scripting.executeScript({
@@ -251,23 +254,32 @@ async function ensureContentScript(tabId) {
     });
     return true;
   } catch (err) {
-    if (err instanceof ExtensionError) {
-      log.warn(err.message);
-      return false;
-    }
     log.warn('Content script injection failed:', err.message);
     return false;
   }
+}
+
+/**
+ * Check if a URL is restricted (cannot inject scripts).
+ * @param {string} url - URL to check
+ * @returns {boolean}
+ */
+function isRestrictedUrl(url) {
+  return !url ||
+    url.startsWith('chrome://') ||
+    url.startsWith('chrome-extension://') ||
+    url.startsWith('about:') ||
+    url.startsWith('edge://') ||
+    url.startsWith('devtools://');
 }
 
 // ── Screenshot Functions ────────────────────────────
 
 /**
  * Capture the visible area of the active tab.
- * @param {chrome.tabs.Tab} [tab] - Optional tab reference (for keyboard shortcut context)
- * @returns {Promise<{success: boolean, dataUrl?: string, error?: string}>}
+ * @returns {Promise<{success: boolean, dataUrl?: string}>}
  */
-async function captureVisibleArea(tab) {
+async function captureVisibleArea() {
   try {
     const settings = await getCachedSettings();
     const format = settings.screenshotFormat || 'png';
@@ -286,7 +298,7 @@ async function captureVisibleArea(tab) {
 }
 
 /**
- * Initiate a full-page capture by injecting and messaging the content script.
+ * Initiate full-page capture.
  * @param {number} [tabId] - Target tab ID
  * @returns {Promise<{success: boolean, error?: string}>}
  */
@@ -302,7 +314,7 @@ async function initiateFullPageCapture(tabId) {
 }
 
 /**
- * Initiate selection capture by injecting and messaging the content script.
+ * Initiate selection capture.
  * @param {number} [tabId] - Target tab ID
  * @returns {Promise<{success: boolean, error?: string}>}
  */
@@ -318,8 +330,8 @@ async function initiateSelectionCapture(tabId) {
 }
 
 /**
- * Process a captured screenshot based on user's after-capture preference.
- * @param {string} dataUrl - The screenshot data URL
+ * Process a captured screenshot based on user settings.
+ * @param {string} dataUrl - Screenshot data URL
  * @param {string} [filename] - Optional filename
  * @returns {Promise<{success: boolean}>}
  */
@@ -334,7 +346,6 @@ async function processCapture(dataUrl, filename) {
     await saveCapture(dataUrl, filename);
     await showNotification('Screenshot saved!', filename || 'Saved to Downloads');
   } else {
-    // Open editor (default)
     await chrome.storage.local.set({ [STORAGE_KEYS.PENDING_CAPTURE]: dataUrl });
     await chrome.tabs.create({ url: chrome.runtime.getURL('editor/editor.html') });
   }
@@ -343,30 +354,23 @@ async function processCapture(dataUrl, filename) {
 }
 
 /**
- * Save a screenshot to the Downloads folder.
+ * Save a screenshot to Downloads.
  * @param {string} dataUrl - Image data URL
  * @param {string} [filename] - Optional filename
- * @param {string} [format] - Image format override
- * @returns {Promise<{success: boolean, downloadId?: number, error?: string}>}
+ * @param {string} [format] - Format override
+ * @returns {Promise<{success: boolean, downloadId?: number}>}
  */
 async function saveCapture(dataUrl, filename, format) {
   const settings = await getCachedSettings();
   const ext = format || settings.screenshotFormat || 'png';
   let name = filename || `${EXTENSION_NAME}_${getTimestamp()}.${ext}`;
-
   name = sanitizeFilename(name);
 
   const subfolder = sanitizeFilename(settings.saveSubfolder);
-  if (subfolder) {
-    name = `${subfolder}/${name}`;
-  }
+  if (subfolder) name = `${subfolder}/${name}`;
 
   try {
-    const downloadId = await chrome.downloads.download({
-      url: dataUrl,
-      filename: name,
-      saveAs: false,
-    });
+    const downloadId = await chrome.downloads.download({ url: dataUrl, filename: name, saveAs: false });
     await showNotification('Screenshot saved!', name);
     return { success: true, downloadId };
   } catch (err) {
@@ -376,21 +380,286 @@ async function saveCapture(dataUrl, filename, format) {
 }
 
 /**
- * Copy an image to clipboard via the offscreen document.
- * @param {string} dataUrl - Image data URL to copy
- * @returns {Promise<{success: boolean, error?: string}>}
+ * Copy image to clipboard via offscreen document.
+ * @param {string} dataUrl - Image data URL
+ * @returns {Promise<{success: boolean}>}
  */
 async function copyToClipboard(dataUrl) {
   try {
-    await ensureOffscreenDocument();
+    await ensureRecorderOffscreen();
     await chrome.runtime.sendMessage({
       action: MESSAGE_TYPES.OFFSCREEN_COPY_CLIPBOARD,
       dataUrl,
     });
-    await closeOffscreenDocument();
+    // Don't close offscreen — it may be in use for recording
     return { success: true };
   } catch (err) {
     log.error('Clipboard copy failed:', err.message);
+    throw new ExtensionError(err.message, ErrorCodes.OFFSCREEN_FAILED);
+  }
+}
+
+// ── Recording Orchestration (New Inline Flow) ───────
+
+/**
+ * Handle the 'start-recording' message from the popup.
+ * Orchestrates: tabCapture → offscreen document → widget injection.
+ *
+ * CRITICAL: This handler runs in the user gesture chain from the popup click,
+ * which is required for chrome.tabCapture.getMediaStreamId().
+ *
+ * @param {Object} config - Recording configuration from popup
+ * @param {chrome.runtime.MessageSender} sender - Message sender
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function handleStartRecording(config, sender) {
+  const currentState = await getRecordingState();
+  if (currentState.isRecording) {
+    return { success: false, error: 'A recording is already in progress' };
+  }
+
+  // Get the active tab (the one the user was on when they clicked in popup)
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!activeTab?.id) {
+    return { success: false, error: 'No active tab found' };
+  }
+
+  const targetTabId = activeTab.id;
+  let streamId = null;
+
+  try {
+    // Acquire stream ID based on source
+    if (config.source === 'tab') {
+      streamId = await getTabCaptureStreamId(targetTabId);
+    } else if (config.source === 'screen') {
+      streamId = await getDesktopCaptureStreamId(activeTab);
+    }
+    // Camera doesn't need a streamId — offscreen uses getUserMedia directly
+
+    // Create/ensure offscreen document
+    await ensureRecorderOffscreen();
+
+    // Send config + streamId to offscreen to start recording
+    const offscreenResponse = await chrome.runtime.sendMessage({
+      action: 'offscreen-start-recording',
+      config: { ...config, streamId },
+    });
+
+    if (!offscreenResponse?.success) {
+      throw new Error(offscreenResponse?.error || 'Offscreen failed to start recording');
+    }
+
+    // Update recording state
+    await setRecordingState({ isRecording: true, targetTabId });
+    await chrome.action.setBadgeText({ text: 'REC' });
+    await chrome.action.setBadgeBackgroundColor({ color: BADGE_RECORDING_COLOR });
+    await startKeepalive();
+
+    // Inject floating widget into the user's tab
+    await injectRecordingWidget(targetTabId);
+
+    // Handle countdown (3-2-1) — if enabled, it's cosmetic via the widget
+    // The offscreen document starts recording immediately; the widget shows the countdown
+    // (Keeping it simple: countdown was in the old recorder page, now recording starts directly)
+
+    log.info(`Recording started: source=${config.source}, tab=${targetTabId}`);
+    return { success: true };
+
+  } catch (err) {
+    log.error('Start recording failed:', err.message);
+    // Clean up on failure
+    await setRecordingState({ isRecording: false, targetTabId: null });
+    await chrome.action.setBadgeText({ text: '' });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Get a tab capture stream ID for the given tab.
+ * Must be called in user gesture chain (popup click → message → this).
+ * @param {number} targetTabId - Tab to capture
+ * @returns {Promise<string>} Stream ID
+ */
+function getTabCaptureStreamId(targetTabId) {
+  return new Promise((resolve, reject) => {
+    chrome.tabCapture.getMediaStreamId({ targetTabId }, (streamId) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else if (!streamId) {
+        reject(new Error('Failed to get tab capture stream ID'));
+      } else {
+        resolve(streamId);
+      }
+    });
+  });
+}
+
+/**
+ * Show the desktop capture picker and return the stream ID.
+ * @param {chrome.tabs.Tab} tab - Active tab for the picker
+ * @returns {Promise<string>} Stream ID
+ */
+function getDesktopCaptureStreamId(tab) {
+  return new Promise((resolve, reject) => {
+    chrome.desktopCapture.chooseDesktopMedia(
+      ['screen', 'window', 'tab'],
+      tab,
+      (streamId) => {
+        if (!streamId) {
+          reject(new Error('User cancelled desktop capture picker'));
+        } else {
+          resolve(streamId);
+        }
+      }
+    );
+  });
+}
+
+/**
+ * Stop the current recording.
+ * @returns {Promise<{success: boolean}>}
+ */
+async function handleStopRecording() {
+  const state = await getRecordingState();
+  if (!state.isRecording) {
+    return { success: false, error: 'No recording in progress' };
+  }
+
+  // Tell offscreen to stop
+  try {
+    await chrome.runtime.sendMessage({ action: 'offscreen-stop-recording' });
+  } catch (err) {
+    log.warn('Failed to send stop to offscreen:', err.message);
+  }
+
+  // Remove widget from user's tab
+  if (state.targetTabId) {
+    try {
+      await chrome.tabs.sendMessage(state.targetTabId, {
+        action: MESSAGE_TYPES.REMOVE_RECORDING_WIDGET,
+      });
+    } catch {
+      // Tab may have been closed
+    }
+  }
+
+  return { success: true };
+}
+
+/**
+ * Handle recording completion — offscreen has serialized data to storage.
+ * Opens the preview page.
+ * @param {number} duration - Recording duration in ms
+ * @param {number} size - Recording size in bytes
+ * @returns {Promise<{success: boolean}>}
+ */
+async function onRecordingComplete(duration, size) {
+  log.info(`Recording complete: ${(size / 1024 / 1024).toFixed(1)} MB, ${Math.round(duration / 1000)}s`);
+
+  const state = await getRecordingState();
+
+  // Remove widget from user's tab
+  if (state.targetTabId) {
+    try {
+      await chrome.tabs.sendMessage(state.targetTabId, {
+        action: MESSAGE_TYPES.REMOVE_RECORDING_WIDGET,
+      });
+    } catch {
+      // Tab may have been closed
+    }
+  }
+
+  // Clear recording state
+  await setRecordingState({ isRecording: false, targetTabId: null });
+  await chrome.action.setBadgeText({ text: '' });
+  await stopKeepalive();
+
+  // Close offscreen document (recording data is now in storage)
+  await closeOffscreenDocument();
+
+  // Open preview page
+  await chrome.tabs.create({ url: chrome.runtime.getURL('recorder/preview.html') });
+
+  await showNotification('Recording saved!', 'Your recording is ready');
+  return { success: true };
+}
+
+/**
+ * Forward a control message to the offscreen document.
+ * @param {string} action - Offscreen action to forward
+ * @returns {Promise<Object>}
+ */
+async function forwardToOffscreen(action) {
+  try {
+    const response = await chrome.runtime.sendMessage({ action });
+    return response || { success: true };
+  } catch (err) {
+    log.warn('Forward to offscreen failed:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Inject the recording widget (shadow DOM) into a tab.
+ * @param {number} tabId - Target tab ID
+ * @returns {Promise<void>}
+ */
+async function injectRecordingWidget(tabId) {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (isRestrictedUrl(tab.url || '')) {
+      log.warn('Cannot inject widget into restricted URL');
+      return;
+    }
+
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content/recording-widget.js'],
+    });
+    log.debug('Recording widget injected into tab', tabId);
+  } catch (err) {
+    log.warn('Widget injection failed:', err.message);
+  }
+}
+
+/** @returns {Promise<{success: boolean}>} */
+async function onRecordingPaused() {
+  await chrome.action.setBadgeText({ text: '⏸' });
+  // Forward to offscreen
+  await forwardToOffscreen('offscreen-toggle-pause');
+  return { success: true };
+}
+
+/** @returns {Promise<{success: boolean}>} */
+async function onRecordingResumed() {
+  await chrome.action.setBadgeText({ text: 'REC' });
+  await chrome.action.setBadgeBackgroundColor({ color: BADGE_RECORDING_COLOR });
+  await forwardToOffscreen('offscreen-toggle-pause');
+  return { success: true };
+}
+
+// ── Offscreen Document Management ───────────────────
+
+/**
+ * Ensure the recorder offscreen document exists.
+ * This document handles both clipboard ops and recording.
+ * @returns {Promise<void>}
+ */
+async function ensureRecorderOffscreen() {
+  try {
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+    });
+    if (existingContexts.length > 0) return;
+
+    await chrome.offscreen.createDocument({
+      url: 'offscreen/recorder-offscreen.html',
+      reasons: ['USER_MEDIA', 'AUDIO_PLAYBACK', 'CLIPBOARD'],
+      justification: 'Recording screen/tab media via MediaRecorder and clipboard operations',
+    });
+    log.debug('Recorder offscreen document created');
+  } catch (err) {
+    log.error('Failed to create offscreen document:', err.message);
     throw new ExtensionError(err.message, ErrorCodes.OFFSCREEN_FAILED);
   }
 }
@@ -406,152 +675,17 @@ async function closeOffscreenDocument() {
     });
     if (existingContexts.length > 0) {
       await chrome.offscreen.closeDocument();
+      log.debug('Offscreen document closed');
     }
   } catch (err) {
     log.debug('Offscreen close skipped:', err.message);
   }
 }
 
-// ── Recording Functions ─────────────────────────────
+// ── Notifications ───────────────────────────────────
 
 /**
- * Show the desktop capture picker and return the stream ID.
- * @param {chrome.runtime.MessageSender} sender - The message sender
- * @returns {Promise<{success: boolean, streamId?: string, error?: string}>}
- */
-async function requestDesktopCapture(sender) {
-  return new Promise((resolve) => {
-    const senderTab = sender.tab;
-    if (!senderTab) {
-      resolve({ success: false, error: 'No sender tab for desktop capture' });
-      return;
-    }
-
-    chrome.desktopCapture.chooseDesktopMedia(
-      ['screen', 'window', 'tab'],
-      senderTab,
-      (streamId) => {
-        if (!streamId) {
-          resolve({ success: false, error: 'User cancelled desktop capture picker' });
-        } else {
-          resolve({ success: true, streamId });
-        }
-      }
-    );
-  });
-}
-
-/**
- * Handle recording-started notification from the recorder tab.
- * @param {chrome.runtime.MessageSender} sender - Message sender (recorder tab)
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-async function onRecordingStarted(sender) {
-  const currentState = await getRecordingState();
-  if (currentState.isRecording) {
-    log.warn('Ignoring recording-started — another recording is already active');
-    return { success: false, error: 'A recording is already in progress' };
-  }
-
-  const recorderTabId = sender.tab?.id || null;
-  await setRecordingState({ isRecording: true, recorderTabId });
-
-  await chrome.action.setBadgeText({ text: 'REC' });
-  await chrome.action.setBadgeBackgroundColor({ color: BADGE_RECORDING_COLOR });
-  await startKeepalive();
-
-  try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    for (const tab of tabs) {
-      if (tab.id !== recorderTabId && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-        await setRecordingState({ recordingTargetTabId: tab.id });
-        await injectRecordingWidget(tab.id);
-        break;
-      }
-    }
-  } catch (err) {
-    log.warn('Could not inject recording widget:', err.message);
-  }
-
-  return { success: true };
-}
-
-/**
- * Inject the recording controls widget into a tab.
- * @param {number} tabId - Target tab ID
- * @returns {Promise<void>}
- */
-async function injectRecordingWidget(tabId) {
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['recorder/recording-controls.js'],
-    });
-  } catch (err) {
-    log.warn('Widget injection failed:', err.message);
-  }
-}
-
-/** @returns {Promise<{success: boolean}>} */
-async function onRecordingPaused() {
-  await chrome.action.setBadgeText({ text: '⏸' });
-  return { success: true };
-}
-
-/** @returns {Promise<{success: boolean}>} */
-async function onRecordingResumed() {
-  await chrome.action.setBadgeText({ text: 'REC' });
-  await chrome.action.setBadgeBackgroundColor({ color: BADGE_RECORDING_COLOR });
-  return { success: true };
-}
-
-/** @returns {Promise<{success: boolean}>} */
-async function onRecordingStopped() {
-  const state = await getRecordingState();
-
-  await chrome.action.setBadgeText({ text: '' });
-  await showNotification('Recording saved!', 'Your recording is ready');
-
-  if (state.recordingTargetTabId) {
-    try {
-      await chrome.tabs.sendMessage(state.recordingTargetTabId, {
-        action: MESSAGE_TYPES.REMOVE_RECORDING_WIDGET,
-      });
-    } catch {
-      // Tab may have been closed
-    }
-  }
-
-  await setRecordingState({ isRecording: false, recorderTabId: null, recordingTargetTabId: null });
-  await stopKeepalive();
-  return { success: true };
-}
-
-/**
- * Forward a command to the recorder tab.
- * @param {string} action - The action to forward
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-async function forwardToRecorder(action) {
-  const state = await getRecordingState();
-  if (!state.recorderTabId) {
-    return { success: false, error: 'No recorder tab' };
-  }
-
-  try {
-    const response = await chrome.tabs.sendMessage(state.recorderTabId, { action });
-    return response || { success: true };
-  } catch (err) {
-    log.warn('Forward to recorder failed:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-// ── Notifications (optional permission) ─────────────
-
-/**
- * Show a chrome notification if notifications are enabled and permission is granted.
- * Since notifications is an optional permission, gracefully degrades if not available.
+ * Show a chrome notification if enabled and permitted.
  * @param {string} title - Notification title
  * @param {string} [message=''] - Notification body
  * @returns {Promise<void>}
@@ -561,7 +695,6 @@ async function showNotification(title, message) {
     const settings = await getCachedSettings();
     if (settings.notifications === 'off') return;
 
-    // Check if notifications permission is granted (optional permission)
     if (!hasNotificationsSupport()) return;
     const granted = await hasPermission('notifications');
     if (!granted) return;
@@ -578,7 +711,6 @@ async function showNotification(title, message) {
   }
 }
 
-// Graceful degradation: notifications API may not be available
 if (chrome.notifications?.onClicked) {
   chrome.notifications.onClicked.addListener((notificationId) => {
     chrome.tabs.create({ url: chrome.runtime.getURL('history/history.html') });
@@ -586,12 +718,12 @@ if (chrome.notifications?.onClicked) {
   });
 }
 
-// ── History Management ──────────────────────────────
+// ── History ─────────────────────────────────────────
 
 /**
- * Add a new entry to the capture history.
- * @param {Object} entry - History entry object
- * @returns {Promise<{success: boolean, error?: string}>}
+ * Add a new entry to capture history.
+ * @param {Object} entry - History entry
+ * @returns {Promise<{success: boolean}>}
  */
 async function addHistoryEntry(entry) {
   try {
@@ -603,10 +735,7 @@ async function addHistoryEntry(entry) {
     const entries = result[STORAGE_KEYS.HISTORY_ENTRIES] || [];
 
     entries.unshift(entry);
-
-    while (entries.length > maxHistory) {
-      entries.pop();
-    }
+    while (entries.length > maxHistory) entries.pop();
 
     await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY_ENTRIES]: entries });
     return { success: true };
@@ -642,50 +771,28 @@ async function sendToContent(tabId, message) {
   }
 }
 
-/**
- * Ensure the offscreen document exists for clipboard operations.
- * @returns {Promise<void>}
- */
-async function ensureOffscreenDocument() {
-  try {
-    const existingContexts = await chrome.runtime.getContexts({
-      contextTypes: ['OFFSCREEN_DOCUMENT'],
-    });
-    if (existingContexts.length > 0) return;
-
-    await chrome.offscreen.createDocument({
-      url: 'offscreen/offscreen.html',
-      reasons: ['CLIPBOARD'],
-      justification: 'Copy screenshot to clipboard',
-    });
-  } catch (err) {
-    log.error('Failed to create offscreen document:', err.message);
-    throw new ExtensionError(err.message, ErrorCodes.OFFSCREEN_FAILED);
-  }
-}
-
 // ── Tab Removal Cleanup ─────────────────────────────
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
   try {
     const state = await getRecordingState();
-    if (state.isRecording && state.recorderTabId === tabId) {
-      log.warn('Recorder tab closed during recording — cleaning up');
-      await onRecordingStopped();
+    if (state.isRecording && state.targetTabId === tabId) {
+      log.warn('Target tab closed during recording — stopping');
+      await handleStopRecording();
     }
   } catch (err) {
     log.warn('Tab removal cleanup error:', err.message);
   }
 });
 
-// ── Service Worker Lifecycle Events ──────────────
+// ── Service Worker Lifecycle ────────────────────────
 
 chrome.runtime.onStartup.addListener(async () => {
   log.info('Service worker startup — recovering state');
   const state = await getRecordingState();
   if (state.isRecording) {
     log.warn('Found stale recording state on startup — cleaning up');
-    await setRecordingState({ isRecording: false, recorderTabId: null, recordingTargetTabId: null });
+    await setRecordingState({ isRecording: false, targetTabId: null });
     await chrome.action.setBadgeText({ text: '' });
   }
 });
@@ -694,12 +801,12 @@ chrome.runtime.onSuspend.addListener(() => {
   log.info('Service worker suspending');
 });
 
-// ── Keepalive during recording ──────────────────
+// ── Keepalive ───────────────────────────────────────
 
 const KEEPALIVE_ALARM_NAME = 'screenbolt-keepalive';
 
 /**
- * Start a periodic alarm to keep the service worker alive during recording.
+ * Start keepalive alarm during recording.
  */
 async function startKeepalive() {
   await chrome.alarms.create(KEEPALIVE_ALARM_NAME, { periodInMinutes: 0.5 });
@@ -707,7 +814,7 @@ async function startKeepalive() {
 }
 
 /**
- * Stop the keepalive alarm when recording ends.
+ * Stop keepalive alarm.
  */
 async function stopKeepalive() {
   await chrome.alarms.clear(KEEPALIVE_ALARM_NAME);

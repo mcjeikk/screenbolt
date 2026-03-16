@@ -67,6 +67,38 @@
     "message": "Cannot capture this page (restricted URL)",
     "description": "Error message for chrome:// and other restricted pages"
   },
+  "startRecording": {
+    "message": "Start Recording",
+    "description": "Button label to start recording"
+  },
+  "stopRecording": {
+    "message": "Stop",
+    "description": "Button label to stop recording"
+  },
+  "microphone": {
+    "message": "Microphone",
+    "description": "Toggle label for microphone"
+  },
+  "systemAudio": {
+    "message": "System Audio",
+    "description": "Toggle label for system audio"
+  },
+  "pipWebcam": {
+    "message": "PiP Webcam",
+    "description": "Toggle label for picture-in-picture webcam overlay"
+  },
+  "resolution": {
+    "message": "Resolution",
+    "description": "Label for resolution selector"
+  },
+  "countdown": {
+    "message": "Countdown",
+    "description": "Toggle label for 3-2-1 countdown"
+  },
+  "recordingInProgress": {
+    "message": "Recording in progress…",
+    "description": "Status text shown during active recording"
+  },
   "pageTooLarge": {
     "message": "Page too large to capture (over $MAX_HEIGHT$ pixels tall). Try capturing the visible area instead.",
     "description": "Error when full-page capture would exceed memory limits",

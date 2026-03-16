@@ -50,6 +50,30 @@
   "restrictedUrl": {
     "message": "No se puede capturar esta página (URL restringida)"
   },
+  "startRecording": {
+    "message": "Iniciar Grabación"
+  },
+  "stopRecording": {
+    "message": "Detener"
+  },
+  "microphone": {
+    "message": "Micrófono"
+  },
+  "systemAudio": {
+    "message": "Audio del Sistema"
+  },
+  "pipWebcam": {
+    "message": "PiP Webcam"
+  },
+  "resolution": {
+    "message": "Resolución"
+  },
+  "countdown": {
+    "message": "Cuenta Regresiva"
+  },
+  "recordingInProgress": {
+    "message": "Grabación en progreso…"
+  },
   "pageTooLarge": {
     "message": "La página es demasiado grande para capturar (más de $MAX_HEIGHT$ píxeles de alto). Intenta capturar solo el área visible.",
     "placeholders": {

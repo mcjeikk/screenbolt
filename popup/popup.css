@@ -1,4 +1,4 @@
-/* ScreenBolt Popup Styles v0.5.0 */
+/* ScreenBolt Popup Styles v0.7.0 */
 
 * {
   margin: 0;
@@ -7,7 +7,7 @@
 }
 
 body {
-  width: 300px;
+  width: 320px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: var(--ss-text);
@@ -61,6 +61,23 @@ body {
   background: var(--ss-danger, #EF4444);
   border-radius: 50%;
   animation: pulse-rec 1.2s ease-in-out infinite;
+}
+
+.btn-stop-inline {
+  margin-left: auto;
+  background: var(--ss-danger, #EF4444);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-stop-inline:hover {
+  background: #DC2626;
 }
 
 @keyframes pulse-rec {
@@ -198,16 +215,174 @@ body {
   font-family: monospace;
 }
 
-/* Record buttons */
-.btn-record {
-  border-color: rgba(239, 68, 68, 0.3);
+/* ── Source Selector ── */
+.source-selector {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 
-.btn-record:hover:not(:disabled) {
+.source-btn {
+  flex: 1;
+  padding: 7px 6px;
+  border: 1px solid var(--ss-border, #E5E7EB);
+  border-radius: var(--ss-radius-xs, 6px);
+  background: var(--ss-bg-card, #F9FAFB);
+  color: var(--ss-text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.source-btn:hover {
+  border-color: var(--ss-primary, #4F46E5);
+  color: var(--ss-primary, #4F46E5);
+}
+
+.source-btn.active {
+  background: var(--ss-primary, #4F46E5);
+  color: white;
+  border-color: var(--ss-primary, #4F46E5);
+}
+
+/* ── Recording Options ── */
+.rec-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.rec-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--ss-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rec-option:hover {
+  background: var(--ss-bg-hover, rgba(0,0,0,0.04));
+}
+
+.rec-option-label {
+  flex: 1;
+  pointer-events: none;
+}
+
+/* Toggle slider */
+.rec-option input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  background: var(--ss-border, #CBD5E1);
+  border-radius: 9px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.rec-option input[type="checkbox"]:checked + .toggle-slider {
+  background: var(--ss-primary, #4F46E5);
+}
+
+.rec-option input[type="checkbox"]:checked + .toggle-slider::after {
+  transform: translateX(16px);
+}
+
+/* PiP sub-options */
+.pip-options {
+  padding: 4px 8px 4px 24px;
+}
+
+.pip-sub-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 11px;
+  color: var(--ss-text-muted, #94A3B8);
+}
+
+.pip-sub-option select {
+  padding: 2px 6px;
+  border: 1px solid var(--ss-border, #CBD5E1);
+  border-radius: 4px;
+  background: var(--ss-bg-card, #F9FAFB);
+  color: var(--ss-text);
+  font-size: 11px;
+}
+
+/* Resolution select */
+.res-select {
+  padding: 3px 8px;
+  border: 1px solid var(--ss-border, #CBD5E1);
+  border-radius: 4px;
+  background: var(--ss-bg-card, #F9FAFB);
+  color: var(--ss-text);
+  font-size: 12px;
+}
+
+/* Start Recording button */
+.btn-start-recording {
+  width: 100%;
+  padding: 12px;
   background: #EF4444;
   color: white;
-  border-color: #EF4444;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  border: none;
+  border-radius: var(--ss-radius-xs, 6px);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.btn-start-recording:hover:not(:disabled) {
+  background: #DC2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-start-recording:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-start-recording:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Recording error */
+.rec-error {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: var(--ss-danger, #EF4444);
+  font-size: 11px;
 }
 
 /* Footer */
@@ -257,7 +432,10 @@ body {
 /* Focus visible styles for keyboard navigation */
 .btn:focus-visible,
 .btn-link:focus-visible,
-.btn-link-small:focus-visible {
+.btn-link-small:focus-visible,
+.source-btn:focus-visible,
+.btn-start-recording:focus-visible,
+.btn-stop-inline:focus-visible {
   outline: 2px solid var(--ss-primary, #4F46E5);
   outline-offset: 2px;
 }

@@ -1,4 +1,29 @@
 # Changelog
+
+## [0.7.0] — 2026-03-16
+
+### Changed
+- **Recording UX overhaul**: Users no longer leave their tab to record. Recording is configured entirely from the popup, with a floating widget in the user's page for controls
+- **Popup**: Recording section now shows inline source selector (Tab/Screen/Camera), toggles for microphone, system audio, PiP webcam, resolution selector, countdown toggle, and a "🔴 Start Recording" button
+- **Architecture**: Recording flow is now: Popup → Service Worker → Offscreen Document (MediaRecorder) + Widget (content script)
+- **Offscreen document**: Unified `offscreen/recorder-offscreen.js` handles both clipboard operations and MediaRecorder recording (replaces old `offscreen/offscreen.js`)
+- **Recording widget**: New `content/recording-widget.js` uses closed shadow DOM for CSS isolation — draggable, shows timer, pause/resume, mute, stop
+- **Service worker**: Orchestrates recording lifecycle — acquires tabCapture/desktopCapture streamId, manages offscreen document, injects widget, handles control forwarding
+- **Version**: Bumped to 0.7.0 across manifest, constants, popup, and all file headers
+
+### Added
+- `offscreen/recorder-offscreen.html` + `recorder-offscreen.js` — offscreen document for MediaRecorder with audio mixing
+- `content/recording-widget.js` — floating shadow DOM recording controls widget
+- New message types in constants: `START_RECORDING`, `OFFSCREEN_*`, `GET_RECORDING_TIME`
+- i18n keys: `startRecording`, `stopRecording`, `microphone`, `systemAudio`, `pipWebcam`, `resolution`, `countdown`, `recordingInProgress` (en/es/pt)
+- Popup remembers last recording config via `chrome.storage.session`
+- Stop recording button in popup's recording indicator
+
+### Removed
+- `recorder/recorder.html`, `recorder/recorder.js`, `recorder/recorder.css` — replaced by inline popup config + offscreen
+- `recorder/recording-controls.js`, `recorder/recording-controls.css` — replaced by shadow DOM widget
+- `offscreen/offscreen.html`, `offscreen/offscreen.js` — merged into `recorder-offscreen.*`
+
 ## [0.6.2] — 2026-03-16
 
 ### Fixed

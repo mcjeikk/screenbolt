@@ -30,6 +30,16 @@ export const MESSAGE_TYPES = Object.freeze({
   TOGGLE_PAUSE: 'toggle-pause',
   TOGGLE_MUTE: 'toggle-mute',
 
+  // Inline recording actions (popup → SW → offscreen)
+  START_RECORDING: 'start-recording',
+  GET_RECORDING_TIME: 'get-recording-time',
+  OFFSCREEN_START_RECORDING: 'offscreen-start-recording',
+  OFFSCREEN_STOP_RECORDING: 'offscreen-stop-recording',
+  OFFSCREEN_TOGGLE_PAUSE: 'offscreen-toggle-pause',
+  OFFSCREEN_TOGGLE_MUTE: 'offscreen-toggle-mute',
+  OFFSCREEN_GET_TIME: 'offscreen-get-time',
+  OFFSCREEN_RECORDING_COMPLETE: 'offscreen-recording-complete',
+
   // Widget actions (from content script recording widget)
   WIDGET_PAUSE: 'widget-pause',
   WIDGET_RESUME: 'widget-resume',
@@ -223,4 +233,4 @@ export const BADGE_RECORDING_COLOR = '#EF4444';
 export const EXTENSION_NAME = 'ScreenBolt';
 
 /** @type {string} Current version */
-export const VERSION = '0.6.2';
+export const VERSION = '0.7.0';

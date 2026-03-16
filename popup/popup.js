@@ -1,8 +1,9 @@
 /**
- * @file ScreenBolt — Popup Script v0.5.0
- * @description Handles button clicks, recording indicator, last capture preview,
- * and settings integration for the extension popup.
- * @version 0.5.0
+ * @file ScreenBolt — Popup Script v0.7.0
+ * @description Handles screenshot buttons, inline recording configuration,
+ * recording indicator, last capture preview, and settings integration.
+ * Recording now starts directly from the popup — no separate recorder page.
+ * @version 0.7.0
  */
 
 (() => {
@@ -12,17 +13,23 @@
   const TOAST_DURATION_MS = 3000;
   const LOG_PREFIX = '[ScreenBolt][Popup]';
 
+  /** @type {string} Currently selected recording source */
+  let selectedSource = 'tab';
+
   // ── Init ────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', async () => {
     bindScreenshotButtons();
-    bindRecordButtons();
+    bindSourceSelector();
+    bindRecordingToggles();
+    bindStartRecording();
     bindFooterButtons();
+    await loadSavedRecordingConfig();
     await checkRecordingStatus();
     await showLastCapture();
   });
 
-  // ── Button Bindings ─────────────────────────────
+  // ── Screenshot Buttons ──────────────────────────
 
   /**
    * Bind screenshot capture buttons to their respective actions.
@@ -33,14 +40,158 @@
     document.getElementById('btn-selection').addEventListener('click', () => captureAction('capture-selection'));
   }
 
+  // ── Source Selector ─────────────────────────────
+
   /**
-   * Bind recording buttons to open the recorder page.
+   * Bind click handlers to recording source buttons (Tab / Screen / Camera).
    */
-  function bindRecordButtons() {
-    document.getElementById('btn-record-tab').addEventListener('click', () => openRecorder('tab'));
-    document.getElementById('btn-record-screen').addEventListener('click', () => openRecorder('screen'));
-    document.getElementById('btn-record-cam').addEventListener('click', () => openRecorder('camera'));
+  function bindSourceSelector() {
+    document.querySelectorAll('.source-btn').forEach(btn => {
+      btn.addEventListener('click', () => selectSource(btn.dataset.source));
+    });
   }
+
+  /**
+   * Select a recording source and update UI state.
+   * @param {string} source - 'tab' | 'screen' | 'camera'
+   */
+  function selectSource(source) {
+    selectedSource = source;
+
+    document.querySelectorAll('.source-btn').forEach(btn => {
+      const isActive = btn.dataset.source === source;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
+
+    // Hide PiP and system audio for camera-only
+    const pipRow = document.getElementById('pip-row');
+    const sysAudioRow = document.getElementById('system-audio-row');
+    const pipOptions = document.getElementById('pip-options');
+
+    if (source === 'camera') {
+      pipRow.style.display = 'none';
+      sysAudioRow.style.display = 'none';
+      pipOptions.style.display = 'none';
+    } else {
+      pipRow.style.display = 'flex';
+      sysAudioRow.style.display = 'flex';
+    }
+  }
+
+  // ── Recording Toggles ──────────────────────────
+
+  /**
+   * Bind toggle interactions for PiP sub-options visibility.
+   */
+  function bindRecordingToggles() {
+    document.getElementById('opt-pip').addEventListener('change', (e) => {
+      document.getElementById('pip-options').style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+
+  // ── Start Recording ─────────────────────────────
+
+  /**
+   * Bind the Start Recording button.
+   */
+  function bindStartRecording() {
+    document.getElementById('btn-start-recording').addEventListener('click', handleStartRecording);
+  }
+
+  /**
+   * Gather recording config, save it, send to service worker, and close popup.
+   * The user gesture chain from the click is preserved for tabCapture.
+   */
+  async function handleStartRecording() {
+    const btn = document.getElementById('btn-start-recording');
+    btn.disabled = true;
+    hideRecError();
+
+    try {
+      const config = {
+        source: selectedSource,
+        microphone: document.getElementById('opt-mic').checked,
+        systemAudio: document.getElementById('opt-system-audio')?.checked ?? false,
+        pip: document.getElementById('opt-pip')?.checked ?? false,
+        pipPosition: document.getElementById('pip-position')?.value ?? 'bottom-right',
+        pipSize: document.getElementById('pip-size')?.value ?? 'medium',
+        resolution: document.getElementById('opt-resolution').value,
+        countdown: document.getElementById('opt-countdown').checked,
+      };
+
+      // Save config for next time
+      await chrome.storage.session.set({ lastRecordingConfig: config });
+
+      // Send to service worker — the SW will handle stream acquisition and offscreen
+      const response = await chrome.runtime.sendMessage({
+        action: 'start-recording',
+        config,
+      });
+
+      if (!response?.success) {
+        showRecError(response?.error || 'Failed to start recording');
+        btn.disabled = false;
+        return;
+      }
+
+      // Close popup — recording is now managed by SW + offscreen + widget
+      window.close();
+
+    } catch (err) {
+      console.error(LOG_PREFIX, 'Start recording failed:', err);
+      showRecError(err.message);
+      btn.disabled = false;
+    }
+  }
+
+  // ── Load Saved Config ───────────────────────────
+
+  /**
+   * Load previously saved recording config and apply to UI.
+   */
+  async function loadSavedRecordingConfig() {
+    try {
+      const result = await chrome.storage.session.get('lastRecordingConfig');
+      const config = result.lastRecordingConfig;
+      if (!config) return;
+
+      selectSource(config.source || 'tab');
+
+      if (typeof config.microphone === 'boolean') {
+        document.getElementById('opt-mic').checked = config.microphone;
+      }
+      if (typeof config.systemAudio === 'boolean') {
+        const el = document.getElementById('opt-system-audio');
+        if (el) el.checked = config.systemAudio;
+      }
+      if (typeof config.pip === 'boolean') {
+        const el = document.getElementById('opt-pip');
+        if (el) {
+          el.checked = config.pip;
+          document.getElementById('pip-options').style.display = config.pip ? 'block' : 'none';
+        }
+      }
+      if (config.pipPosition) {
+        const el = document.getElementById('pip-position');
+        if (el) el.value = config.pipPosition;
+      }
+      if (config.pipSize) {
+        const el = document.getElementById('pip-size');
+        if (el) el.value = config.pipSize;
+      }
+      if (config.resolution) {
+        document.getElementById('opt-resolution').value = config.resolution;
+      }
+      if (typeof config.countdown === 'boolean') {
+        document.getElementById('opt-countdown').checked = config.countdown;
+      }
+    } catch {
+      // Non-critical — use defaults
+    }
+  }
+
+  // ── Footer ──────────────────────────────────────
 
   /**
    * Bind footer navigation buttons.
@@ -57,39 +208,14 @@
     });
   }
 
-  // ── Actions ─────────────────────────────────────
+  // ── Capture Actions ─────────────────────────────
 
   /**
-   * Open the recorder configuration page with a pre-selected source.
-   * Saves the current tab ID to session storage so the recorder can capture
-   * the correct tab instead of capturing itself.
-   * @param {string} source - Recording source ('tab' | 'screen' | 'camera')
-   */
-  async function openRecorder(source) {
-    // Save the current (active) tab ID BEFORE opening the recorder tab.
-    // This is critical for tab capture: the recorder tab will become active,
-    // so we must tell it which tab to capture via storage.
-    try {
-      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (activeTab?.id) {
-        await chrome.storage.session.set({ recordingTargetTabId: activeTab.id });
-      }
-    } catch (err) {
-      console.warn(LOG_PREFIX, 'Could not save target tab ID:', err);
-    }
-
-    const url = chrome.runtime.getURL(`recorder/recorder.html?source=${encodeURIComponent(source)}`);
-    chrome.tabs.create({ url });
-    window.close();
-  }
-
-  /**
-   * Execute a capture action and handle the response based on settings.
+   * Execute a screenshot capture action and handle the response.
    * @param {string} action - The capture action type
    */
   async function captureAction(action) {
     try {
-      // Selection and full-page are handled by the content script
       if (action === 'capture-selection' || action === 'capture-full-page') {
         await chrome.runtime.sendMessage({ action });
         window.close();
@@ -117,7 +243,6 @@
         });
         window.close();
       } else {
-        // Open in editor (default)
         await chrome.storage.local.set({ pendingCapture: response.dataUrl });
         await chrome.tabs.create({ url: chrome.runtime.getURL('editor/editor.html') });
         window.close();
@@ -131,16 +256,26 @@
   // ── Recording Status ────────────────────────────
 
   /**
-   * Check if a recording is active and show the indicator.
+   * Check if a recording is active and show/hide UI accordingly.
    */
   async function checkRecordingStatus() {
     try {
       const response = await chrome.runtime.sendMessage({ action: 'get-recording-status' });
       if (response?.isRecording) {
         document.getElementById('recording-indicator').style.display = 'flex';
+        document.getElementById('record-section').style.display = 'none';
+
+        // Bind stop button in indicator
+        const stopBtn = document.getElementById('btn-stop-recording');
+        if (stopBtn) {
+          stopBtn.addEventListener('click', async () => {
+            await chrome.runtime.sendMessage({ action: 'widget-stop' });
+            window.close();
+          });
+        }
       }
     } catch {
-      // Service worker may not be ready — safe to ignore
+      // Service worker may not be ready
     }
   }
 
@@ -155,7 +290,6 @@
       const entries = result.historyEntries || [];
       if (entries.length === 0) return;
 
-      // Get most recent entry with a thumbnail
       const sorted = [...entries].sort((a, b) => b.timestamp - a.timestamp);
       const last = sorted.find(e => e.thumbnail);
       if (!last) return;
@@ -181,7 +315,7 @@
         }
       });
     } catch {
-      // Silently ignore — non-critical feature
+      // Non-critical
     }
   }
 
@@ -204,16 +338,15 @@
 
   /**
    * Show a temporary error toast in the popup.
-   * @param {string} message - Error message to display
+   * @param {string} message - Error message
    */
   function showError(message) {
-    // Remove existing toasts
     document.querySelectorAll('.error-toast').forEach(el => el.remove());
 
     const toast = document.createElement('div');
     toast.className = 'error-toast';
     toast.setAttribute('role', 'alert');
-    toast.textContent = `\u26A0\uFE0F ${message}`;
+    toast.textContent = `⚠️ ${message}`;
 
     document.querySelector('.container').appendChild(toast);
 
@@ -222,5 +355,22 @@
       toast.style.transition = 'opacity 0.3s';
       setTimeout(() => toast.remove(), 300);
     }, TOAST_DURATION_MS);
+  }
+
+  /**
+   * Show an error in the recording section.
+   * @param {string} message - Error message
+   */
+  function showRecError(message) {
+    const el = document.getElementById('rec-error');
+    el.textContent = `⚠️ ${message}`;
+    el.style.display = 'block';
+  }
+
+  /**
+   * Hide the recording error.
+   */
+  function hideRecError() {
+    document.getElementById('rec-error').style.display = 'none';
   }
 })();
