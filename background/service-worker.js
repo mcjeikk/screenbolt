@@ -1,12 +1,48 @@
 /**
- * ScreenSnap — Background Service Worker (MV3)
- * Handles capture commands, keyboard shortcuts, recording coordination, and message routing.
+ * ScreenSnap — Background Service Worker v0.4.0 (MV3)
+ * Handles capture commands, keyboard shortcuts, recording coordination,
+ * notifications, onInstalled welcome page, and history management.
  */
 
 // ── Recording State ─────────────────────────────────
 let isRecording = false;
-let recorderTabId = null; // Tab ID of recorder.html
-let recordingTargetTabId = null; // Tab being recorded (for widget injection)
+let recorderTabId = null;
+let recordingTargetTabId = null;
+
+// ── onInstalled — Welcome page & setup ──────────────
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason === 'install') {
+    // First install: show welcome page
+    const result = await chrome.storage.local.get('onboardingComplete');
+    if (!result.onboardingComplete) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('welcome/welcome.html') });
+    }
+
+    // Set default settings
+    const existing = await chrome.storage.sync.get('settings');
+    if (!existing.settings) {
+      await chrome.storage.sync.set({
+        settings: {
+          screenshotFormat: 'png',
+          jpgQuality: 92,
+          afterCapture: 'editor',
+          saveSubfolder: '',
+          recResolution: '1080',
+          recAudio: 'both',
+          recPip: 'off',
+          recPipPosition: 'bottom-right',
+          recPipSize: 'medium',
+          recCountdown: 'on',
+          recFormat: 'webm',
+          theme: 'dark',
+          notifications: 'on',
+          keepHistory: 'on',
+          maxHistory: 100,
+        }
+      });
+    }
+  }
+});
 
 // ── Keyboard Shortcuts ──────────────────────────────
 chrome.commands.onCommand.addListener(async (command) => {
@@ -72,16 +108,27 @@ async function handleMessage(message, sender) {
     case 'recording-stopped':
       return await onRecordingStopped();
 
-    // Widget commands (from content script widget → service worker → recorder tab)
+    case 'get-recording-status':
+      return { success: true, isRecording };
+
+    // Widget commands
     case 'widget-pause':
     case 'widget-resume':
-      return await forwardToRecorder(message.action === 'widget-pause' ? 'toggle-pause' : 'toggle-pause');
+      return await forwardToRecorder('toggle-pause');
 
     case 'widget-mute':
       return await forwardToRecorder('toggle-mute');
 
     case 'widget-stop':
       return await forwardToRecorder('stop-recording');
+
+    // ── History Actions ─────────────────────────────
+    case 'add-history-entry':
+      return await addHistoryEntry(message.entry);
+
+    // ── Notification click ──────────────────────────
+    case 'notification-click':
+      return { success: true };
 
     default:
       console.warn('[ScreenSnap] Unknown action:', message.action);
@@ -94,9 +141,11 @@ async function handleMessage(message, sender) {
 async function captureVisibleArea(tab) {
   try {
     const settings = await getSettings();
+    const format = settings.screenshotFormat || 'png';
+    const quality = format === 'jpg' ? (settings.jpgQuality || 92) : 92;
     const dataUrl = await chrome.tabs.captureVisibleTab(null, {
-      format: settings.format || 'png',
-      quality: settings.quality || 92,
+      format: format === 'jpg' ? 'jpeg' : 'png',
+      quality,
     });
     return { success: true, dataUrl };
   } catch (error) {
@@ -121,26 +170,40 @@ async function initiateSelectionCapture(tabId) {
 
 async function processCapture(dataUrl, filename) {
   const settings = await getSettings();
-  if (settings.openEditor !== false) {
+  const afterCapture = settings.afterCapture || 'editor';
+
+  if (afterCapture === 'clipboard') {
+    await copyToClipboard(dataUrl);
+    await showNotification('Screenshot copied!', 'Copied to clipboard');
+  } else if (afterCapture === 'save') {
+    await saveCapture(dataUrl, filename);
+    await showNotification('Screenshot saved!', filename || 'Saved to Downloads');
+  } else {
+    // Open editor (default)
     const editorUrl = chrome.runtime.getURL('editor/editor.html');
     await chrome.storage.local.set({ pendingCapture: dataUrl });
     await chrome.tabs.create({ url: editorUrl });
-  } else {
-    await saveCapture(dataUrl, filename);
   }
   return { success: true };
 }
 
 async function saveCapture(dataUrl, filename, format) {
   const settings = await getSettings();
-  const ext = format || settings.format || 'png';
-  const name = filename || `ScreenSnap_${getTimestamp()}.${ext}`;
+  const ext = format || settings.screenshotFormat || 'png';
+  let name = filename || `ScreenSnap_${getTimestamp()}.${ext}`;
+
+  // Apply subfolder if set
+  if (settings.saveSubfolder) {
+    name = `${settings.saveSubfolder}/${name}`;
+  }
+
   try {
     const downloadId = await chrome.downloads.download({
       url: dataUrl,
       filename: name,
-      saveAs: settings.askSaveLocation || false,
+      saveAs: false,
     });
+    await showNotification('Screenshot saved!', name);
     return { success: true, downloadId };
   } catch (error) {
     console.error('[ScreenSnap] Save failed:', error);
@@ -151,10 +214,7 @@ async function saveCapture(dataUrl, filename, format) {
 async function copyToClipboard(dataUrl) {
   try {
     await ensureOffscreenDocument();
-    await chrome.runtime.sendMessage({
-      action: 'offscreen-copy-clipboard',
-      dataUrl,
-    });
+    await chrome.runtime.sendMessage({ action: 'offscreen-copy-clipboard', dataUrl });
     return { success: true };
   } catch (error) {
     console.error('[ScreenSnap] Clipboard copy failed:', error);
@@ -164,40 +224,22 @@ async function copyToClipboard(dataUrl) {
 
 // ── Recording Functions ─────────────────────────────
 
-/**
- * Handle desktopCapture request from recorder.html.
- * Must be called from the service worker since desktopCapture API is only available here.
- */
 async function requestDesktopCapture(sender) {
   return new Promise((resolve) => {
-    // Get the tab that opened recorder.html (sender tab)
     const senderTab = sender.tab;
-
-    chrome.desktopCapture.chooseDesktopMedia(
-      ['screen', 'window', 'tab'],
-      senderTab,
-      (streamId) => {
-        if (!streamId) {
-          resolve({ success: false, error: 'User cancelled desktop capture picker' });
-        } else {
-          resolve({ success: true, streamId });
-        }
-      }
-    );
+    chrome.desktopCapture.chooseDesktopMedia(['screen', 'window', 'tab'], senderTab, (streamId) => {
+      if (!streamId) resolve({ success: false, error: 'User cancelled desktop capture picker' });
+      else resolve({ success: true, streamId });
+    });
   });
 }
 
-/** Called when recording starts — set badge and inject widget */
 async function onRecordingStarted(sender) {
   isRecording = true;
   recorderTabId = sender.tab?.id;
-
-  // Set red badge
   await chrome.action.setBadgeText({ text: 'REC' });
   await chrome.action.setBadgeBackgroundColor({ color: '#EF4444' });
 
-  // Find the tab that was active before recorder opened and inject widget
-  // (for tab/screen recording, inject into the previously active tab)
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     for (const tab of tabs) {
@@ -210,17 +252,12 @@ async function onRecordingStarted(sender) {
   } catch (err) {
     console.warn('[ScreenSnap] Could not inject recording widget:', err);
   }
-
   return { success: true };
 }
 
-/** Inject the floating recording controls widget into a tab */
 async function injectRecordingWidget(tabId) {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['recorder/recording-controls.js']
-    });
+    await chrome.scripting.executeScript({ target: { tabId }, files: ['recorder/recording-controls.js'] });
   } catch (err) {
     console.warn('[ScreenSnap] Widget injection failed:', err);
   }
@@ -240,22 +277,18 @@ async function onRecordingResumed() {
 async function onRecordingStopped() {
   isRecording = false;
   await chrome.action.setBadgeText({ text: '' });
+  await showNotification('Recording saved!', 'Your recording is ready');
 
-  // Remove widget from target tab
   if (recordingTargetTabId) {
     try {
       await chrome.tabs.sendMessage(recordingTargetTabId, { action: 'remove-recording-widget' });
-    } catch (err) {
-      // Tab may have been closed
-    }
+    } catch (err) { /* Tab may have been closed */ }
     recordingTargetTabId = null;
   }
-
   recorderTabId = null;
   return { success: true };
 }
 
-/** Forward a command from the widget to the recorder tab */
 async function forwardToRecorder(action) {
   if (!recorderTabId) return { success: false, error: 'No recorder tab' };
   try {
@@ -264,6 +297,56 @@ async function forwardToRecorder(action) {
   } catch (err) {
     console.warn('[ScreenSnap] Forward to recorder failed:', err);
     return { success: false, error: err.message };
+  }
+}
+
+// ── Notifications ───────────────────────────────────
+
+async function showNotification(title, message) {
+  try {
+    const settings = await getSettings();
+    if (settings.notifications === 'off') return;
+
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('assets/icons/icon-128.png'),
+      title: `ScreenSnap — ${title}`,
+      message: message || '',
+      silent: false,
+    });
+  } catch (e) {
+    console.warn('[ScreenSnap] Notification failed:', e);
+  }
+}
+
+// Handle notification click
+chrome.notifications.onClicked.addListener((notificationId) => {
+  // Open history page when notification is clicked
+  chrome.tabs.create({ url: chrome.runtime.getURL('history/history.html') });
+  chrome.notifications.clear(notificationId);
+});
+
+// ── History Management ──────────────────────────────
+
+async function addHistoryEntry(entry) {
+  try {
+    const settings = await getSettings();
+    if (settings.keepHistory === 'off') return { success: true };
+
+    const maxHistory = settings.maxHistory || 100;
+    const result = await chrome.storage.local.get('historyEntries');
+    const entries = result.historyEntries || [];
+
+    entries.unshift(entry);
+
+    // Trim to max
+    while (entries.length > maxHistory) entries.pop();
+
+    await chrome.storage.local.set({ historyEntries: entries });
+    return { success: true };
+  } catch (e) {
+    console.error('[ScreenSnap] Failed to add history entry:', e);
+    return { success: false, error: e.message };
   }
 }
 
@@ -279,8 +362,12 @@ async function sendToContent(tabId, message) {
 }
 
 async function getSettings() {
-  const result = await chrome.storage.local.get('settings');
-  return result.settings || {};
+  try {
+    const result = await chrome.storage.sync.get('settings');
+    return result.settings || {};
+  } catch (e) {
+    return {};
+  }
 }
 
 function getTimestamp() {
@@ -289,11 +376,8 @@ function getTimestamp() {
 }
 
 async function ensureOffscreenDocument() {
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT'],
-  });
+  const existingContexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
   if (existingContexts.length > 0) return;
-
   await chrome.offscreen.createDocument({
     url: 'offscreen/offscreen.html',
     reasons: ['CLIPBOARD'],

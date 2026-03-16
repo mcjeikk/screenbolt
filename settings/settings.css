@@ -1,0 +1,189 @@
+/* ScreenSnap — Settings Page Styles */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--ss-bg);
+  color: var(--ss-text);
+  min-height: 100vh;
+  padding: 32px 24px;
+}
+
+.settings-app {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ss-border);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-left .logo { width: 32px; height: 32px; }
+.header-left h1 { font-size: 22px; font-weight: 700; color: var(--ss-primary); }
+
+.version {
+  font-size: 12px;
+  color: var(--ss-text-muted);
+  padding: 4px 10px;
+  background: var(--ss-bg-input);
+  border-radius: 12px;
+}
+
+/* Sections */
+.settings-section {
+  background: var(--ss-bg-card);
+  border: 1px solid var(--ss-border);
+  border-radius: var(--ss-radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.settings-section h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ss-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ss-border);
+}
+
+/* Setting Row */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ss-border-light);
+}
+
+.setting-row:last-child { border-bottom: none; }
+
+.setting-row label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ss-text);
+}
+
+.setting-row select,
+.text-input {
+  padding: 7px 14px;
+  background: var(--ss-bg-input);
+  border: 1px solid var(--ss-border);
+  border-radius: var(--ss-radius-xs);
+  color: var(--ss-text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 160px;
+}
+
+.setting-row select:focus,
+.text-input:focus { border-color: var(--ss-primary); }
+
+.text-input::placeholder { color: var(--ss-text-muted); }
+
+/* Slider group */
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-group input[type="range"] {
+  width: 120px;
+  accent-color: var(--ss-primary);
+}
+
+.slider-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ss-primary);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Shortcuts */
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.shortcut-row.sub { padding-left: 16px; font-size: 13px; }
+
+.shortcut-group-label {
+  font-weight: 600;
+  color: var(--ss-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+kbd {
+  padding: 3px 10px;
+  background: var(--ss-bg-input);
+  border: 1px solid var(--ss-border);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--ss-text-muted);
+}
+
+.shortcut-note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--ss-text-muted);
+}
+
+.shortcut-note code {
+  background: var(--ss-bg-input);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* Save status toast */
+.save-status {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  background: var(--ss-success);
+  color: white;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.save-status.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

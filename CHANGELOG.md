@@ -4,6 +4,65 @@ All notable changes to ScreenSnap will be documented in this file.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.4.0] - 2026-03-16
+
+### Added
+- **History Page** (`history/`) — full capture history with grid view:
+  - Displays all screenshots and recordings with thumbnails
+  - Filter by type: All / Screenshots / Recordings
+  - Search by name, sort by date/size/name
+  - Delete individual items or "Clear All"
+  - Pagination with "Load more" button
+  - Click to re-open in editor (screenshots) or find in Downloads (recordings)
+  - Max 100 entries by default (configurable), auto-prunes oldest
+- **Settings Page** (`settings/`) — complete configuration:
+  - Screenshot settings: format (PNG/JPG), JPG quality slider, after-capture action, save subfolder
+  - Recording settings: resolution, audio, PiP, countdown, format defaults
+  - General: theme, notifications, history on/off, max history items
+  - Keyboard shortcuts reference (read-only)
+  - All settings persist via `chrome.storage.sync` (cross-device sync)
+- **Theme System** — Light / Dark / System auto-detect:
+  - CSS custom properties in `assets/styles/themes.css`
+  - Applied to ALL pages: popup, editor, recorder, preview, history, settings, welcome
+  - System mode uses `prefers-color-scheme` media query
+  - Theme preference saved in settings
+- **PDF Export** — in the editor toolbar:
+  - Generates valid PDF with embedded JPEG image, no external libraries
+  - Manual PDF binary construction (header, catalog, pages, image XObject, xref, trailer)
+  - Downloads via `chrome.downloads`
+- **Professional Icon** — new SVG-based icon:
+  - Camera/viewfinder design with lightning bolt (snap) motif
+  - Indigo gradient (#4F46E5 → #6366F1)
+  - Generated crisp PNGs at 16, 32, 48, 128px via Sharp
+- **Chrome Notifications** — after each capture/recording:
+  - Uses `chrome.notifications.create()` with extension icon
+  - Click notification → opens History page
+  - Respects notifications on/off setting
+  - Added `notifications` permission to manifest
+- **Welcome / Onboarding Page** (`welcome/`):
+  - Shown once on first install via `chrome.runtime.onInstalled`
+  - 4 slides: Welcome, Screenshots, Annotations, Recording
+  - SVG illustrations for each feature
+  - Keyboard navigation (arrows) and dot indicators
+  - Marks completion in storage (won't repeat)
+- **Popup Polish**:
+  - Recording indicator when a recording is active
+  - Last capture quick access with thumbnail
+  - Version number (v0.4.0) in footer
+  - Smooth hover transitions with shadow effects
+  - Correct links to History and Settings pages
+
+### Changed
+- Popup links now point to `history/history.html` and `settings/settings.html` (previously pointed to non-existent `editor/` paths)
+- Settings are now read from `chrome.storage.sync` across all modules (editor, recorder, background)
+- Service worker reads settings for screenshot format, quality, and after-capture behavior
+- Editor saves captures to history automatically on load
+- All page CSS refactored to use theme CSS custom properties (`--ss-*`)
+- Manifest version bumped to 0.4.0
+
+### Fixed
+- Popup History/Settings links were pointing to wrong paths (`editor/history.html` → `history/history.html`)
+
 ## [0.3.0] - 2026-03-16
 
 ### Added

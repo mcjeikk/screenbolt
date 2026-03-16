@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ScreenSnap",
   "description": "Free screenshot & screen recording tool. Capture, annotate, and record — no limits, no account, 100% local.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
@@ -26,7 +26,8 @@
     "downloads",
     "storage",
     "offscreen",
-    "scripting"
+    "scripting",
+    "notifications"
   ],
   "host_permissions": ["<all_urls>"],
   "commands": {

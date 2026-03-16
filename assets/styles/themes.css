@@ -1,0 +1,130 @@
+/**
+ * ScreenSnap — Theme System v0.4.0
+ * CSS custom properties for Light / Dark / System theme support.
+ * Import this file in every page BEFORE the page-specific CSS.
+ */
+
+/* ── Dark Theme (default) ── */
+:root {
+  --ss-primary: #4F46E5;
+  --ss-primary-hover: #4338CA;
+  --ss-primary-light: rgba(79, 70, 229, 0.15);
+  --ss-accent: #22D3EE;
+  --ss-danger: #EF4444;
+  --ss-danger-hover: #DC2626;
+  --ss-success: #059669;
+  --ss-warning: #EAB308;
+
+  --ss-bg: #0F172A;
+  --ss-bg-card: #1E293B;
+  --ss-bg-input: #334155;
+  --ss-bg-hover: rgba(255, 255, 255, 0.06);
+  --ss-bg-toolbar: #16213e;
+
+  --ss-text: #F1F5F9;
+  --ss-text-muted: #94A3B8;
+  --ss-text-inverse: #111827;
+
+  --ss-border: #334155;
+  --ss-border-light: rgba(255, 255, 255, 0.08);
+
+  --ss-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --ss-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  --ss-radius: 12px;
+  --ss-radius-sm: 8px;
+  --ss-radius-xs: 6px;
+
+  /* Canvas area background */
+  --ss-canvas-checker1: #222;
+  --ss-canvas-checker2: transparent;
+
+  /* Scrollbar */
+  --ss-scrollbar-bg: #1E293B;
+  --ss-scrollbar-thumb: #475569;
+
+  color-scheme: dark;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --ss-bg: #F8FAFC;
+  --ss-bg-card: #FFFFFF;
+  --ss-bg-input: #F1F5F9;
+  --ss-bg-hover: rgba(0, 0, 0, 0.04);
+  --ss-bg-toolbar: #FFFFFF;
+
+  --ss-text: #111827;
+  --ss-text-muted: #6B7280;
+  --ss-text-inverse: #F1F5F9;
+
+  --ss-border: #E5E7EB;
+  --ss-border-light: rgba(0, 0, 0, 0.06);
+
+  --ss-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --ss-shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+  --ss-canvas-checker1: #E5E7EB;
+  --ss-canvas-checker2: transparent;
+
+  --ss-scrollbar-bg: #F1F5F9;
+  --ss-scrollbar-thumb: #CBD5E1;
+
+  color-scheme: light;
+}
+
+/* ── System Theme — auto-detect via prefers-color-scheme ── */
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    --ss-bg: #F8FAFC;
+    --ss-bg-card: #FFFFFF;
+    --ss-bg-input: #F1F5F9;
+    --ss-bg-hover: rgba(0, 0, 0, 0.04);
+    --ss-bg-toolbar: #FFFFFF;
+
+    --ss-text: #111827;
+    --ss-text-muted: #6B7280;
+    --ss-text-inverse: #F1F5F9;
+
+    --ss-border: #E5E7EB;
+    --ss-border-light: rgba(0, 0, 0, 0.06);
+
+    --ss-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --ss-shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+    --ss-canvas-checker1: #E5E7EB;
+    --ss-canvas-checker2: transparent;
+
+    --ss-scrollbar-bg: #F1F5F9;
+    --ss-scrollbar-thumb: #CBD5E1;
+
+    color-scheme: light;
+  }
+}
+
+/* ── Global scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ss-scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ss-scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ss-text-muted);
+}
+
+/* ── Utility: transition for theme changes ── */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+}

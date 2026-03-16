@@ -1,19 +1,19 @@
 /* ScreenSnap Preview Styles */
 
 :root {
-  --primary: #4F46E5;
-  --primary-hover: #4338CA;
-  --danger: #EF4444;
-  --bg: #0F172A;
-  --bg-card: #1E293B;
-  --bg-input: #334155;
-  --text: #F1F5F9;
-  --text-muted: #94A3B8;
-  --border: #334155;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --accent: #22D3EE;
-  --success: #22C55E;
+  --primary: var(--ss-primary, #4F46E5);
+  --primary-hover: var(--ss-primary-hover, #4338CA);
+  --danger: var(--ss-danger, #EF4444);
+  --bg: var(--ss-bg, #0F172A);
+  --bg-card: var(--ss-bg-card, #1E293B);
+  --bg-input: var(--ss-bg-input, #334155);
+  --text: var(--ss-text, #F1F5F9);
+  --text-muted: var(--ss-text-muted, #94A3B8);
+  --border: var(--ss-border, #334155);
+  --radius: var(--ss-radius, 12px);
+  --radius-sm: var(--ss-radius-sm, 8px);
+  --accent: var(--ss-accent, #22D3EE);
+  --success: var(--ss-success, #22C55E);
 }
 
 * {

@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=320">
   <title>ScreenSnap</title>
+  <link rel="stylesheet" href="../assets/styles/themes.css">
   <link rel="stylesheet" href="popup.css">
+  <script src="../assets/scripts/theme-init.js"></script>
 </head>
 <body>
   <div class="container">
@@ -12,6 +14,21 @@
       <img src="../assets/icons/icon-32.png" alt="ScreenSnap" class="logo">
       <h1>ScreenSnap</h1>
     </header>
+
+    <!-- Recording indicator (shown when recording is active) -->
+    <div id="recording-indicator" class="recording-indicator" style="display:none;">
+      <span class="rec-dot-pulse"></span>
+      <span>Recording in progress…</span>
+    </div>
+
+    <!-- Last capture quick access -->
+    <div id="last-capture" class="last-capture" style="display:none;">
+      <img id="last-capture-thumb" class="last-capture-thumb" alt="Last capture">
+      <div class="last-capture-info">
+        <span id="last-capture-name" class="last-capture-name">-</span>
+        <button id="btn-open-last" class="btn-link-small">Open last →</button>
+      </div>
+    </div>
 
     <section class="section">
       <h2>📸 Screenshot</h2>
@@ -54,6 +71,7 @@
 
     <footer class="footer">
       <button id="btn-history" class="btn-link">📁 History</button>
+      <span class="footer-version">v0.4.0</span>
       <button id="btn-settings" class="btn-link">⚙️ Settings</button>
     </footer>
   </div>
