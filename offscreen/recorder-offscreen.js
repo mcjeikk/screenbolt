@@ -137,18 +137,8 @@
       }
     }
 
-    // Webcam for PiP — getUserMedia directly
-    if (config.pip && config.source !== 'camera') {
-      try {
-        webcamStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 320, height: 320 },
-          audio: false,
-        });
-        console.info(LOG_PREFIX, 'Webcam acquired for PiP');
-      } catch (err) {
-        console.warn(LOG_PREFIX, 'Webcam not available:', err.message, '(use Grant Mic/Camera Access button)');
-      }
-    }
+    // PiP webcam is handled by the content script (visible on page, captured by tabCapture)
+    // Offscreen documents can't render video frames (hidden = no decode)
 
     combinedStream = buildCombinedStream(mainStream, micStream, webcamStream, config);
 
@@ -346,11 +336,11 @@
    * @param {MediaStream} stream - Combined stream to record
    */
   function startMediaRecorder(stream) {
-    // WebM VP9 is the most reliable for tab/screen capture
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-      ? 'video/webm;codecs=vp9,opus'
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
-        ? 'video/webm;codecs=vp8,opus'
+    // Prefer MP4 H.264 (Chrome 130+), fallback to WebM
+    const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,mp4a.40.2')
+      ? 'video/mp4;codecs=avc1.42E01E,mp4a.40.2'
+      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus'
         : 'video/webm';
 
     mediaRecorder = new MediaRecorder(stream, {

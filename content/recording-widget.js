@@ -170,6 +170,113 @@
   widget.appendChild(stopBtn);
 
   shadow.appendChild(widget);
+
+  // ── PiP Webcam Bubble ───────────────────────────
+  // Rendered on the visible page so tabCapture captures it.
+  // Offscreen documents can't render <video> (hidden = no frames decoded).
+
+  let webcamStream = null;
+  let webcamBubble = null;
+
+  async function setupWebcamBubble(config) {
+    if (!config?.pip) return;
+
+    const size = { small: 120, medium: 180, large: 240 }[config.pipSize] || 180;
+    const pos = config.pipPosition || 'bottom-right';
+    const margin = 20;
+
+    try {
+      webcamStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: size * 2 }, height: { ideal: size * 2 } },
+        audio: false,
+      });
+    } catch (err) {
+      console.warn('[ScreenBolt][Widget] Webcam not available:', err.message);
+      return;
+    }
+
+    // Create the webcam video element
+    const video = document.createElement('video');
+    video.srcObject = webcamStream;
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+
+    // Create the bubble container in shadow DOM
+    webcamBubble = document.createElement('div');
+    webcamBubble.className = 'webcam-bubble';
+    webcamBubble.appendChild(video);
+
+    // Position styles
+    const posStyle = {
+      'top-left': `top: ${margin}px; left: ${margin}px;`,
+      'top-right': `top: ${margin}px; right: ${margin}px;`,
+      'bottom-left': `bottom: ${margin + 60}px; left: ${margin}px;`,
+      'bottom-right': `bottom: ${margin + 60}px; right: ${margin}px;`,
+    }[pos] || `bottom: ${margin + 60}px; right: ${margin}px;`;
+
+    // Add webcam bubble styles
+    const webcamStyle = document.createElement('style');
+    webcamStyle.textContent = `
+      .webcam-bubble {
+        position: fixed;
+        ${posStyle}
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid rgba(255,255,255,0.8);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        z-index: 2147483646;
+        cursor: grab;
+      }
+      .webcam-bubble video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+      }
+    `;
+    shadow.appendChild(webcamStyle);
+    shadow.appendChild(webcamBubble);
+
+    // Make bubble draggable
+    let bubbleDrag = false, bx = 0, by = 0;
+    webcamBubble.addEventListener('mousedown', (e) => {
+      bubbleDrag = true;
+      const r = webcamBubble.getBoundingClientRect();
+      bx = e.clientX - r.left;
+      by = e.clientY - r.top;
+      webcamBubble.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!bubbleDrag) return;
+      webcamBubble.style.position = 'fixed';
+      webcamBubble.style.left = `${e.clientX - bx}px`;
+      webcamBubble.style.top = `${e.clientY - by}px`;
+      webcamBubble.style.right = 'auto';
+      webcamBubble.style.bottom = 'auto';
+    });
+    document.addEventListener('mouseup', () => {
+      if (bubbleDrag) {
+        bubbleDrag = false;
+        webcamBubble.style.cursor = 'grab';
+      }
+    });
+  }
+
+  function cleanupWebcam() {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(t => t.stop());
+      webcamStream = null;
+    }
+    if (webcamBubble) {
+      webcamBubble.remove();
+      webcamBubble = null;
+    }
+  }
+
   document.body.appendChild(host);
 
   // ── State ───────────────────────────────────────
@@ -306,6 +413,14 @@
       clearInterval(timerInterval);
       timerInterval = null;
     }
+    cleanupWebcam();
     host.remove();
   }
+
+  // ── Listen for PiP config from service worker ───
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.action === 'setup-webcam-pip') {
+      setupWebcamBubble(msg.config);
+    }
+  });
 })();
