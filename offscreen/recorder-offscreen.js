@@ -15,7 +15,7 @@
   const PIP_CANVAS_FPS = 30;
   const PIP_MARGIN = 20;
   const MEDIA_RECORDER_TIMESLICE_MS = 1000;
-  const RECORDING_CHUNK_SIZE = 5 * 1024 * 1024;
+  const RECORDING_CHUNK_SIZE = 1 * 1024 * 1024; // 1MB chunks (base64 ~1.33MB per message)
   const PIP_SIZES = Object.freeze({ small: 120, medium: 180, large: 240 });
 
   // ── State ───────────────────────────────────────
@@ -153,16 +153,15 @@
     combinedStream = buildCombinedStream(mainStream, micStream, webcamStream, config);
 
     // Play back tab audio to the user — chrome.tabCapture mutes the tab
-    if (config.source === 'tab' && mainStream) {
+    if (config.source === 'tab' && mainStream && mainStream.getAudioTracks().length > 0) {
       try {
         const audioCtx = new AudioContext();
-        const source = audioCtx.createMediaStreamSource(mainStream);
+        const source = audioCtx.createMediaStreamSource(new MediaStream(mainStream.getAudioTracks()));
         source.connect(audioCtx.destination);
-        // Store reference for cleanup
         mainStream._audioPlayback = { ctx: audioCtx, source };
-        console.info(LOG_PREFIX, 'Tab audio playback enabled (unmuted for user)');
+        console.info(LOG_PREFIX, 'Tab audio playback enabled');
       } catch (err) {
-        console.warn(LOG_PREFIX, 'Could not enable audio playback:', err.message);
+        console.warn(LOG_PREFIX, 'Audio playback setup failed:', err.message);
       }
     }
 
@@ -450,15 +449,26 @@
         size: blob.size,
       });
 
-      // Send each chunk to SW for storage
+      // Send each chunk to SW for storage (base64 encoded for efficient messaging)
       for (let i = 0; i < totalChunks; i++) {
         const start = i * RECORDING_CHUNK_SIZE;
         const end = Math.min(start + RECORDING_CHUNK_SIZE, uint8.length);
-        await chrome.runtime.sendMessage({
+        const chunk = uint8.slice(start, end);
+        // Convert to base64 string (much smaller than Array.from for messaging)
+        let binary = '';
+        for (let j = 0; j < chunk.length; j++) {
+          binary += String.fromCharCode(chunk[j]);
+        }
+        const b64 = btoa(binary);
+        const resp = await chrome.runtime.sendMessage({
           action: 'offscreen-store-recording-chunk',
           index: i,
-          data: Array.from(uint8.slice(start, end)),
+          data: b64,
+          encoding: 'base64',
         });
+        if (!resp?.success) {
+          throw new Error(`Failed to store chunk ${i}: ${resp?.error || 'unknown'}`);
+        }
       }
 
       console.info(LOG_PREFIX, `Sent ${totalChunks} chunks to SW (${formatSize(blob.size)})`);

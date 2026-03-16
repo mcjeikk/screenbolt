@@ -62,14 +62,25 @@ async function loadRecording() {
 
   const chunkData = await chrome.storage.local.get(chunkKeys);
 
-  // Reassemble into a single Uint8Array
+  // Reassemble into a single Uint8Array (chunks may be base64 or raw arrays)
   const parts = [];
   let totalLength = 0;
   for (let i = 0; i < chunkCount; i++) {
-    const arr = chunkData[`recording-chunk-${i}`];
-    if (!arr) throw new Error(`Missing recording chunk ${i}`);
-    totalLength += arr.length;
-    parts.push(new Uint8Array(arr));
+    const raw = chunkData[`recording-chunk-${i}`];
+    if (!raw) throw new Error(`Missing recording chunk ${i}`);
+    let bytes;
+    if (typeof raw === 'string') {
+      // Base64 encoded
+      const binary = atob(raw);
+      bytes = new Uint8Array(binary.length);
+      for (let j = 0; j < binary.length; j++) {
+        bytes[j] = binary.charCodeAt(j);
+      }
+    } else {
+      bytes = new Uint8Array(raw);
+    }
+    totalLength += bytes.length;
+    parts.push(bytes);
   }
 
   const combined = new Uint8Array(totalLength);
