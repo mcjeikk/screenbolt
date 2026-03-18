@@ -1,0 +1,8 @@
+dist/
+node_modules/
+store/
+*.md
+*.png
+*.jpg
+*.svg
+*.wasm
