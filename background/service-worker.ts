@@ -32,8 +32,17 @@ import { createLogger } from '../utils/logger.js';
 import { getTimestamp, sanitizeFilename } from '../utils/helpers.js';
 import { getSettings } from '../utils/storage.js';
 import { ExtensionError, ErrorCodes } from '../utils/errors.js';
-import { hasNotificationsSupport, hasPermission } from '../utils/feature-detection.js';
+import { hasNotificationsSupport, hasPermission, hasTabCaptureSupport } from '../utils/feature-detection.js';
 import { runMigrations } from '../utils/migration.js';
+import {
+  ensureOffscreenDocument as ensureRecorderOffscreenPlatform,
+  closeOffscreenDocument as closeOffscreenDocumentPlatform,
+  copyImageToClipboard,
+  getTabCaptureStreamId as getTabCaptureStreamIdPlatform,
+  getDesktopCaptureStreamId as getDesktopCaptureStreamIdPlatform,
+  forwardToOffscreen as forwardToOffscreenPlatform,
+  hasChromeRecordingSupport,
+} from '../utils/platform.js';
 
 // -- Logger ------------------------------------------------------
 const log = createLogger('SW');
@@ -274,9 +283,11 @@ chrome.runtime.onMessage.addListener(
       return false;
     }
 
-    // CRITICAL: For start-recording, call tabCapture IMMEDIATELY in the user gesture
-    // chain -- before initPromise.then() which breaks the gesture chain.
-    if (message.action === 'start-recording' && message.config?.source === 'tab') {
+    // CRITICAL: For start-recording with tab source, call tabCapture IMMEDIATELY
+    // in the user gesture chain -- before initPromise.then() which breaks the gesture chain.
+    // On Firefox (no tabCapture), fall through to the generic handler which will
+    // send a message to use getDisplayMedia in a popup/content-script context.
+    if (message.action === 'start-recording' && message.config?.source === 'tab' && hasTabCaptureSupport()) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const targetTabId = tabs[0]?.id;
         if (!targetTabId) {
@@ -361,7 +372,8 @@ function isRestrictedUrl(url: string): boolean {
     url.startsWith('chrome-extension://') ||
     url.startsWith('about:') ||
     url.startsWith('edge://') ||
-    url.startsWith('devtools://')
+    url.startsWith('devtools://') ||
+    url.startsWith('moz-extension://')
   );
 }
 
@@ -462,15 +474,10 @@ async function saveCapture(
   }
 }
 
-/** Copy image to clipboard via offscreen document. */
+/** Copy image to clipboard. Uses platform abstraction for cross-browser support. */
 async function copyToClipboard(dataUrl: string): Promise<HandlerResponse> {
   try {
-    await ensureRecorderOffscreen();
-    await chrome.runtime.sendMessage({
-      action: MESSAGE_TYPES.OFFSCREEN_COPY_CLIPBOARD,
-      dataUrl,
-    });
-    // Don't close offscreen -- it may be in use for recording
+    await copyImageToClipboard(dataUrl);
     return { success: true };
   } catch (err) {
     log.error('Clipboard copy failed:', (err as Error).message);
@@ -495,8 +502,8 @@ async function continueStartRecording(
   const targetTabId = config.targetTabId;
 
   try {
-    // Create/ensure offscreen document
-    await ensureRecorderOffscreen();
+    // Create/ensure offscreen document (no-op on Firefox)
+    await ensureRecorderOffscreenPlatform();
 
     // Send config + streamId to offscreen to start recording
     const offscreenResponse = (await chrome.runtime.sendMessage({
@@ -548,6 +555,9 @@ async function continueStartRecording(
 /**
  * Handle the 'start-recording' message from the popup.
  * For screen and camera sources (tab is handled in the message listener directly).
+ *
+ * On Firefox (no tabCapture/desktopCapture), tab-source recordings also
+ * arrive here. We signal the popup/content-script to use getDisplayMedia.
  */
 async function handleStartRecording(
   config: InternalRecordingConfig,
@@ -556,48 +566,27 @@ async function handleStartRecording(
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const targetTabId = activeTab?.id;
 
+  // Firefox: no tabCapture or desktopCapture -- tell the caller to use
+  // getDisplayMedia in a context that has DOM access (popup or content script).
+  if (!hasChromeRecordingSupport()) {
+    log.info('Browser lacks Chrome recording APIs -- requesting getDisplayMedia flow');
+    return {
+      success: false,
+      error: 'use-get-display-media',
+    };
+  }
+
   let streamId: string | undefined;
   if (config.source === 'screen') {
-    streamId = await getDesktopCaptureStreamId(activeTab!);
+    streamId = await getDesktopCaptureStreamIdPlatform(activeTab!);
   }
 
   return continueStartRecording({ ...config, streamId, targetTabId });
 }
 
-/**
- * Get a tab capture stream ID for the given tab.
- * Must be called in user gesture chain (popup click -> message -> this).
- */
-function getTabCaptureStreamId(targetTabId: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.tabCapture.getMediaStreamId({ targetTabId }, (streamId) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else if (!streamId) {
-        reject(new Error('Failed to get tab capture stream ID'));
-      } else {
-        resolve(streamId);
-      }
-    });
-  });
-}
-
-/** Show the desktop capture picker and return the stream ID. */
-function getDesktopCaptureStreamId(tab: chrome.tabs.Tab): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.desktopCapture.chooseDesktopMedia(
-      ['screen', 'window', 'tab'],
-      tab,
-      (streamId) => {
-        if (!streamId) {
-          reject(new Error('User cancelled desktop capture picker'));
-        } else {
-          resolve(streamId);
-        }
-      },
-    );
-  });
-}
+// Tab capture and desktop capture stream ID helpers are now in utils/platform.ts.
+// The inline tabCapture call in the message listener (for user gesture chain)
+// is kept here because it must run synchronously in the callback chain.
 
 /** Stop the current recording. */
 async function handleStopRecording(): Promise<HandlerResponse> {
@@ -657,8 +646,8 @@ async function onRecordingComplete(
   await chrome.action.setBadgeText({ text: '' });
   await stopKeepalive();
 
-  // Close offscreen document (recording data is now in storage)
-  await closeOffscreenDocument();
+  // Close offscreen document (recording data is now in storage; no-op on Firefox)
+  await closeOffscreenDocumentPlatform();
 
   // Open preview page
   await chrome.tabs.create({ url: chrome.runtime.getURL('recorder/preview.html') });
@@ -667,17 +656,10 @@ async function onRecordingComplete(
   return { success: true };
 }
 
-/** Forward a control message to the offscreen document. */
+/** Forward a control message to the offscreen document. Platform-aware. */
 async function forwardToOffscreen(action: string): Promise<HandlerResponse> {
-  try {
-    const response = (await chrome.runtime.sendMessage({ action })) as
-      | HandlerResponse
-      | undefined;
-    return response || { success: true };
-  } catch (err) {
-    log.warn('Forward to offscreen failed:', (err as Error).message);
-    return { success: false, error: (err as Error).message };
-  }
+  const result = await forwardToOffscreenPlatform(action);
+  return result as HandlerResponse;
 }
 
 /** Inject the recording widget (shadow DOM) into a tab. */
@@ -713,49 +695,9 @@ async function onRecordingResumed(): Promise<HandlerResponse> {
   return { success: true };
 }
 
-// -- Offscreen Document Management -------------------------------
-
-/**
- * Ensure the recorder offscreen document exists.
- * This document handles both clipboard ops and recording.
- */
-async function ensureRecorderOffscreen(): Promise<void> {
-  try {
-    const existingContexts = await chrome.runtime.getContexts({
-      contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
-    });
-    if (existingContexts.length > 0) return;
-
-    await chrome.offscreen.createDocument({
-      url: 'offscreen/recorder-offscreen.html',
-      reasons: [
-        chrome.offscreen.Reason.USER_MEDIA,
-        chrome.offscreen.Reason.AUDIO_PLAYBACK,
-        chrome.offscreen.Reason.CLIPBOARD,
-      ],
-      justification: 'Recording screen/tab media via MediaRecorder and clipboard operations',
-    });
-    log.debug('Recorder offscreen document created');
-  } catch (err) {
-    log.error('Failed to create offscreen document:', (err as Error).message);
-    throw new ExtensionError((err as Error).message, ErrorCodes.OFFSCREEN_FAILED);
-  }
-}
-
-/** Close the offscreen document if it exists. */
-async function closeOffscreenDocument(): Promise<void> {
-  try {
-    const existingContexts = await chrome.runtime.getContexts({
-      contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
-    });
-    if (existingContexts.length > 0) {
-      await chrome.offscreen.closeDocument();
-      log.debug('Offscreen document closed');
-    }
-  } catch (err) {
-    log.debug('Offscreen close skipped:', (err as Error).message);
-  }
-}
+// -- Offscreen Document Management (delegated to utils/platform.ts) ---
+// ensureRecorderOffscreenPlatform and closeOffscreenDocumentPlatform are
+// imported from utils/platform.ts and handle Chrome vs Firefox differences.
 
 // -- Notifications -----------------------------------------------
 

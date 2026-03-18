@@ -17,3 +17,7 @@ node_modules/
 *.pem
 content/content-script.js
 content/recording-widget.js
+
+dist-chrome/
+dist-firefox/
+dist-edge/

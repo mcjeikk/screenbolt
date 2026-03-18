@@ -3,7 +3,14 @@ import { crx } from '@crxjs/vite-plugin';
 import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import ts from 'typescript';
-import manifest from './manifest.json' with { type: 'json' };
+
+const browserTarget = (process.env.BROWSER_TARGET ?? 'chrome') as
+  | 'chrome'
+  | 'firefox'
+  | 'edge';
+
+const manifestPath = resolve(import.meta.dirname, `manifests/${browserTarget}.json`);
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
 
 /**
  * Plugin to pre-compile content scripts (TypeScript → JS) and copy static assets.
@@ -13,6 +20,7 @@ import manifest from './manifest.json' with { type: 'json' };
 function handleContentScripts(): Plugin {
   const contentScripts = ['content-script', 'recording-widget'];
   const root = import.meta.dirname;
+  const outDir = resolve(root, `dist-${browserTarget}`);
 
   return {
     name: 'handle-content-scripts',
@@ -37,25 +45,28 @@ function handleContentScripts(): Plugin {
     },
     // Copy compiled content scripts + static assets to dist
     writeBundle() {
-      const dist = resolve(root, 'dist');
-      mkdirSync(resolve(dist, 'content'), { recursive: true });
+      mkdirSync(resolve(outDir, 'content'), { recursive: true });
       for (const script of contentScripts) {
         const jsPath = resolve(root, `content/${script}.js`);
         if (existsSync(jsPath)) {
-          cpSync(jsPath, resolve(dist, `content/${script}.js`));
+          cpSync(jsPath, resolve(outDir, `content/${script}.js`));
         }
       }
-      cpSync('content/content-style.css', resolve(dist, 'content/content-style.css'));
+      cpSync('content/content-style.css', resolve(outDir, 'content/content-style.css'));
 
-      mkdirSync(resolve(dist, 'assets/scripts'), { recursive: true });
-      cpSync('assets/scripts/theme-init.js', resolve(dist, 'assets/scripts/theme-init.js'));
+      mkdirSync(resolve(outDir, 'assets/scripts'), { recursive: true });
+      cpSync('assets/scripts/theme-init.js', resolve(outDir, 'assets/scripts/theme-init.js'));
     },
   };
 }
 
 export default defineConfig({
   plugins: [handleContentScripts(), crx({ manifest })],
+  define: {
+    'import.meta.env.BROWSER_TARGET': JSON.stringify(browserTarget),
+  },
   build: {
+    outDir: `dist-${browserTarget}`,
     rollupOptions: {
       input: {
         editor: 'editor/editor.html',

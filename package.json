@@ -7,7 +7,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "BROWSER_TARGET=chrome vite build",
+    "build:chrome": "BROWSER_TARGET=chrome vite build",
+    "build:firefox": "BROWSER_TARGET=firefox vite build",
+    "build:edge": "BROWSER_TARGET=edge vite build",
+    "build:all": "npm run build:chrome && npm run build:firefox && npm run build:edge",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

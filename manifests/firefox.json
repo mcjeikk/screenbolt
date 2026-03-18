@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "version": "0.8.8",
+  "default_locale": "en",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "screenbolt@screenbolt.dev",
+      "strict_min_version": "115.0"
+    }
+  },
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png"
+    }
+  },
+  "background": {
+    "scripts": ["background/service-worker.ts"]
+  },
+  "permissions": [
+    "activeTab",
+    "alarms",
+    "downloads",
+    "storage",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "optional_permissions": ["notifications"],
+  "host_permissions": ["<all_urls>"],
+  "commands": {
+    "capture-visible": {
+      "suggested_key": {
+        "default": "Alt+Shift+V"
+      },
+      "description": "Capture visible area"
+    },
+    "capture-full": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "Capture full page"
+    },
+    "capture-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Capture selected area"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["content/recording-widget.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
