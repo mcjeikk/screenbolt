@@ -1,216 +1,194 @@
-# ScreenBolt 📸
+# ScreenBolt
 
-> **Free screenshot & screen recording Chrome extension.**
+> **Free screenshot & screen recording browser extension.**
 > No limits. No account. No tracking. 100% local.
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/)
+[![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefox&logoColor=white)](https://addons.mozilla.org/)
+[![Edge Add-on](https://img.shields.io/badge/Edge-Add--on-0078D7?logo=microsoftedge&logoColor=white)](https://microsoftedge.microsoft.com/addons/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-22C55E)](https://developer.chrome.com/docs/extensions/mv3/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.8.8-indigo)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.0-indigo)](CHANGELOG.md)
 
 ---
 
-## ✨ Features
+## Features
 
-### 📸 Screenshots
+### Screenshots
 - **Visible Area** — Capture what you see, instantly
 - **Full Page** — Scroll-and-stitch capture for entire pages
 - **Selection** — Click and drag to capture a specific region
 - **Keyboard shortcuts** — Alt+Shift+V / F / S for quick access
 
-### ✏️ Annotation Editor
-- 🏹 **Arrow** — Point to what matters
-- ⬜ **Rectangle** — Highlight areas with rounded-corner outlines
-- ⭕ **Ellipse** — Circle important elements
-- ➖ **Line** — Draw straight lines
-- 🖊️ **Freehand** — Sketch freely
-- 🔤 **Text** — Add labels and notes
-- 🔲 **Blur/Pixelate** — Redact sensitive information
-- 🟡 **Highlight** — Semi-transparent marker
-- ✂️ **Crop** — Trim to exactly what you need
-- ↩️ **Undo/Redo** — Full history stack (Ctrl+Z / Ctrl+Shift+Z)
-- 🎨 **Color picker** + stroke width control
-- 💾 **Export** — PNG, JPG, or PDF
+### Annotation Editor
+- **Arrow** — Point to what matters
+- **Rectangle** — Highlight areas with rounded-corner outlines
+- **Ellipse** — Circle important elements
+- **Line** — Draw straight lines
+- **Freehand** — Sketch freely
+- **Text** — Add labels and notes
+- **Blur/Pixelate** — Redact sensitive information
+- **Highlight** — Semi-transparent marker
+- **Crop** — Trim to exactly what you need
+- **Undo/Redo** — Full history stack (Ctrl+Z / Ctrl+Shift+Z)
+- **Opacity control** — Per-annotation transparency (10-100%)
+- **Color picker** + stroke width control
+- **Keyboard shortcut hints** — Visible key badges on every tool
+- **Export** — PNG, JPG, or PDF
 
-### 🎥 Screen Recording
-- 📑 **Tab Recording** — Capture a single browser tab
-- 🖥️ **Screen/Window** — Record your full screen or any window
-- 📷 **Camera Only** — Webcam-only recording
-- 🎞️ **PiP Webcam Overlay** — Circular webcam bubble on recordings
-- 🎤 **Audio Controls** — Mic + system audio, independently togglable
-- ⏸️ **Pause/Resume** — Take breaks during recording
-- ⏱️ **No Time Limit** — Record as long as you need
-- 🔄 **WebM & MP4** export (native MediaRecorder)
+### Screen Recording
+- **Tab Recording** — Capture a single browser tab
+- **Screen/Window** — Record your full screen or any window
+- **Camera Only** — Webcam-only recording
+- **PiP Webcam Overlay** — Circular webcam bubble on recordings
+- **Audio Controls** — Mic + system audio, independently togglable
+- **Pause/Resume** — Take breaks during recording
+- **No Time Limit** — Record as long as you need
+- **Recording Trim** — Cut start/end before downloading
+- **GIF Export** — Convert recordings to GIF (10fps, optimized palette)
+- **WebM & MP4** export (native MediaRecorder)
 
-### 📁 History
+### History
 - Grid view with thumbnails for all captures
 - Filter by type (screenshots / recordings)
 - Search by name, sort by date/size/name
+- **Inline rename** — Double-click to edit capture names
+- **Batch select + delete** — Multi-select with checkboxes
 - One-click re-open in editor
 
-### ⚙️ Settings
+### Settings
 - Theme: Dark / Light / System auto-detect
 - Screenshot format (PNG/JPG), quality, after-capture action
 - Recording resolution (720p/1080p/4K), audio defaults
 - Notifications toggle, history limits
 
-### 🎨 Theming
-- Beautiful dark theme (default)
-- Clean light theme
-- System auto-detect via `prefers-color-scheme`
+---
+
+## Installation
+
+### Chrome
+1. Clone: `git clone https://github.com/mcjeikk/screenbolt.git && cd screenbolt`
+2. Install: `npm install && npm run build:chrome`
+3. Open `chrome://extensions/` > Developer mode > Load unpacked > select `dist-chrome/`
+
+### Firefox
+1. Clone: `git clone https://github.com/mcjeikk/screenbolt.git && cd screenbolt`
+2. Install: `npm install && npm run build:firefox`
+3. Open `about:debugging#/runtime/this-firefox` > Load Temporary Add-on > select `dist-firefox/manifest.json`
+
+### Edge
+1. Clone: `git clone https://github.com/mcjeikk/screenbolt.git && cd screenbolt`
+2. Install: `npm install && npm run build:edge`
+3. Open `edge://extensions/` > Developer mode > Load unpacked > select `dist-edge/`
 
 ---
 
-## 📷 Screenshots
-
-> *Coming soon — screenshots will be added before Chrome Web Store submission.*
-
----
-
-## 🚀 Installation
-
-### Development Mode (recommended for now)
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mcjeikk/screenbolt.git
-   cd screenbolt
-   ```
-
-2. Open Chrome and navigate to `chrome://extensions/`
-
-3. Enable **Developer mode** (toggle in top-right)
-
-4. Click **Load unpacked** and select the `screenbolt/` folder
-
-5. Pin ScreenBolt to your toolbar for quick access 📌
-
-### Chrome Web Store
-
-> *Coming soon!*
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```
 screenbolt/
-├── manifest.json                 # Extension manifest (MV3)
+├── manifests/                    # Platform-specific manifests (chrome, firefox, edge)
 ├── background/
-│   └── service-worker.js         # Central coordinator & message router (ES modules)
+│   └── service-worker.ts         # Central coordinator & message router
 ├── popup/
-│   └── popup.html/js/css         # Extension popup — screenshots + inline recording config
+│   └── popup.ts/html/css         # Extension popup — screenshots + recording config
 ├── content/
-│   ├── content-script.js         # Selection overlay & full-page scroll-stitch capture
+│   ├── content-script.ts         # Selection overlay & full-page scroll-stitch capture
 │   ├── content-style.css         # Selection overlay styles
-│   └── recording-widget.js       # Floating recording controls (shadow DOM) + PiP webcam
+│   └── recording-widget.ts       # Floating recording controls (shadow DOM) + PiP webcam
 ├── editor/
-│   └── editor.html/js/css        # Canvas-based annotation editor (9 tools)
+│   └── editor.ts/html/css        # Canvas-based annotation editor (9 tools + opacity)
 ├── recorder/
-│   └── preview.html/js/css       # Post-recording preview & download
+│   └── preview.ts/html/css       # Post-recording preview, trim & GIF export
 ├── offscreen/
-│   └── recorder-offscreen.html/js # MediaRecorder + audio mixing + clipboard proxy
+│   └── recorder-offscreen.ts/html # MediaRecorder + audio mixing (Chrome/Edge only)
 ├── history/
-│   └── history.html/js/css       # Capture history browser with search/filter/sort
+│   └── history.ts/html/css       # Capture history with rename & batch ops
 ├── settings/
-│   └── settings.html/js/css      # Extension settings (synced via chrome.storage.sync)
+│   └── settings.ts/html/css      # Extension settings (synced via chrome.storage.sync)
 ├── welcome/
-│   └── welcome.html/js/css       # Onboarding slides (shown on first install)
+│   └── welcome.ts/html/css       # Onboarding slides (shown on first install)
 ├── permissions/
-│   └── permissions.html/js       # Mic/camera permission grant page
+│   └── permissions.ts/html       # Mic/camera permission grant page
 ├── utils/
-│   ├── constants.js              # MESSAGE_TYPES, STORAGE_KEYS, DEFAULT_SETTINGS
-│   ├── logger.js                 # Structured logging with module prefixes
-│   ├── storage.js                # chrome.storage wrapper with quota handling
-│   ├── helpers.js                # Timestamps, formatting, sanitization, debounce
-│   ├── messages.js               # Type-safe message passing with validation
-│   ├── errors.js                 # ExtensionError class, error codes, withRetry()
-│   ├── feature-detection.js      # Cross-browser capability checks
-│   └── migration.js              # Versioned data migration runner
+│   ├── types.ts                  # Shared interfaces (Settings, HistoryEntry, etc.)
+│   ├── constants.ts              # MESSAGE_TYPES, STORAGE_KEYS, DEFAULT_SETTINGS
+│   ├── platform.ts               # Cross-browser abstraction (clipboard, capture, offscreen)
+│   ├── idb-storage.ts            # IndexedDB wrapper for recordings & thumbnails
+│   ├── storage.ts                # chrome.storage wrapper with typed get/set
+│   ├── messages.ts               # Type-safe message passing with validation
+│   ├── logger.ts                 # Structured logging with error ring buffer
+│   ├── errors.ts                 # ExtensionError class, error codes, withRetry()
+│   ├── helpers.ts                # Timestamps, formatting, sanitization, debounce
+│   ├── feature-detection.ts      # Cross-browser capability checks
+│   └── migration.ts              # Versioned data migration runner
+├── types/
+│   ├── gifenc.d.ts               # Type declarations for gifenc
+│   └── env.d.ts                  # Build environment types
+├── tests/
+│   ├── utils/                    # Unit tests (Vitest)
+│   └── e2e/                      # E2E tests (Playwright)
 ├── assets/
-│   ├── icons/                    # Extension icons (16/32/48/128px + SVG source)
+│   ├── icons/                    # Extension icons (16/32/48/128px)
 │   ├── styles/themes.css         # CSS custom properties for dark/light/system themes
 │   └── scripts/theme-init.js     # Theme pre-loader (prevents flash)
 ├── _locales/                     # i18n (English, Spanish, Portuguese)
-├── docs/                         # Development guidelines & audit results
-├── store/                        # Chrome Web Store assets & publishing guide
-├── CHANGELOG.md
-└── README.md
-```
-
-### Recording Flow (v0.7.0+)
-
-```
-Popup (config) → Service Worker (orchestrator)
-                  ├→ Offscreen Document (MediaRecorder + audio mixing)
-                  ├→ Content Script: Recording Widget (timer, pause, stop)
-                  └→ Content Script: PiP Webcam Bubble (visible, captured by tabCapture)
+└── docs/                         # Development guidelines & audit results
 ```
 
 ### Key Design Decisions
 
-- **Vanilla JS** — No frameworks, no build step, zero dependencies
+- **TypeScript strict** — Full codebase, zero `@ts-expect-error`, compile-time safety
 - **Canvas API** — All annotations rendered directly on canvas
+- **IndexedDB** — Recordings stored as blobs, no base64 relay through service worker
 - **MV3 Native** — Service worker, offscreen documents, ES modules
-- **Message Router** — Centralized pub/sub pattern in service worker
+- **Platform Abstraction** — Feature detection, not browser sniffing
 - **Shadow DOM** — Recording widget CSS-isolated from page styles
-- **TabCapture PiP** — Webcam bubble visible on page, captured naturally by tabCapture
-- **Theme System** — CSS custom properties for consistent dark/light/system theming
-- **Session Storage** — Recording state survives SW restart within a session
+- **Vite + @crxjs** — Hot reload in dev, optimized multi-target production builds
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Prerequisites
+- Node.js 18+
+- npm 9+
 
-- Google Chrome 116+ (for Manifest V3 features)
-- Basic understanding of Chrome Extension APIs
-
-### Getting Started
+### Commands
 
 ```bash
-# Clone
-git clone https://github.com/mcjeikk/screenbolt.git
-
-# Load in Chrome
-# chrome://extensions/ → Developer mode → Load unpacked → select folder
-
-# Make changes → Chrome auto-reloads on save (or click refresh on extension card)
+npm install          # Install dependencies
+npm run dev          # Dev server with HMR (Chrome)
+npm run build        # Production build (Chrome)
+npm run build:all    # Build all targets (Chrome + Firefox + Edge)
+npm run lint         # ESLint + TypeScript checking
+npm run test         # Unit tests (Vitest)
+npm run test:e2e     # E2E tests (Playwright)
+npm run typecheck    # TypeScript strict check
 ```
 
 ### Code Standards
-
-- **JSDoc** on all functions
+- **TypeScript strict** — No implicit any, no unchecked index access
+- **ESLint + Prettier** — Enforced via CI
 - **camelCase** for variables/functions, **UPPER_SNAKE** for constants
 - **No innerHTML** with user data — use DOM APIs
 - **Always** revoke Object URLs and stop MediaStream tracks
-- See `docs/BEST_PRACTICES.md` for full guidelines
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Here's how:
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Make your changes following the code standards above
-4. Test in Chrome with the extension loaded
+3. Make your changes following the code standards
+4. Run `npm run lint && npm test && npm run build`
 5. Commit: `git commit -m "feat: add my feature"`
 6. Push and open a Pull Request
 
-### Commit Convention
-
-- `feat:` — New features
-- `fix:` — Bug fixes
-- `refactor:` — Code improvements (no behavior change)
-- `docs:` — Documentation updates
-- `style:` — Formatting, CSS changes
-
 ---
 
-## 🔒 Privacy
+## Privacy
 
 ScreenBolt is designed with privacy as a core principle:
 
@@ -224,13 +202,13 @@ Your screenshots and recordings never leave your device.
 
 ---
 
-## 📄 License
+## License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 <p align="center">
-  Built with ❤️ and vanilla JS<br>
+  Built with TypeScript & zero dependencies<br>
   <strong>ScreenBolt</strong> — Screenshot & record, beautifully.
 </p>

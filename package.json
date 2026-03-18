@@ -1,6 +1,6 @@
 {
   "name": "screenbolt",
-  "version": "0.8.8",
+  "version": "1.0.0",
   "private": true,
   "description": "Free screenshot & screen recording Chrome extension. No limits. No account. No tracking. 100% local.",
   "license": "MIT",
