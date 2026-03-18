@@ -5,9 +5,11 @@
  * @version 0.5.0
  */
 
+import type { Settings } from './types.js';
+
 // ── Message Types ───────────────────────────────────
-/** @enum {string} All message action types used in runtime.sendMessage */
-export const MESSAGE_TYPES = Object.freeze({
+/** All message action types used in runtime.sendMessage */
+export const MESSAGE_TYPES = {
   // Screenshot actions
   CAPTURE_VISIBLE: 'capture-visible',
   CAPTURE_FULL_PAGE: 'capture-full-page',
@@ -57,11 +59,13 @@ export const MESSAGE_TYPES = Object.freeze({
 
   // Notifications
   NOTIFICATION_CLICK: 'notification-click',
-});
+} as const;
+
+export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
 
 // ── Storage Keys ────────────────────────────────────
-/** @enum {string} Keys used in chrome.storage */
-export const STORAGE_KEYS = Object.freeze({
+/** Keys used in chrome.storage */
+export const STORAGE_KEYS = {
   SETTINGS: 'settings',
   HISTORY_ENTRIES: 'historyEntries',
   ONBOARDING_COMPLETE: 'onboardingComplete',
@@ -70,11 +74,13 @@ export const STORAGE_KEYS = Object.freeze({
   RECORDING_CHUNKS_COUNT: 'recording-chunks-count',
   RECORDING_MIME: 'recording-mime',
   RECORDING_CHUNK_PREFIX: 'recording-chunk-',
-});
+} as const;
+
+export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
 // ── Default Settings ────────────────────────────────
-/** @type {Object} Default settings applied on first install */
-export const DEFAULT_SETTINGS = Object.freeze({
+/** Default settings applied on first install */
+export const DEFAULT_SETTINGS: Settings = Object.freeze({
   // Screenshot
   screenshotFormat: 'png',
   jpgQuality: 92,
@@ -98,42 +104,45 @@ export const DEFAULT_SETTINGS = Object.freeze({
 });
 
 // ── Capture Formats ─────────────────────────────────
-/** @enum {string} Supported screenshot formats */
-export const CAPTURE_FORMATS = Object.freeze({
+/** Supported screenshot formats */
+export const CAPTURE_FORMATS = {
   PNG: 'png',
   JPG: 'jpg',
-});
+} as const;
+
+export type CaptureFormat = (typeof CAPTURE_FORMATS)[keyof typeof CAPTURE_FORMATS];
 
 // ── Recording Sources ───────────────────────────────
-/** @enum {string} Recording source types */
-export const RECORDING_SOURCES = Object.freeze({
+/** Recording source types */
+export const RECORDING_SOURCES = {
   TAB: 'tab',
   SCREEN: 'screen',
   CAMERA: 'camera',
-});
+} as const;
+
+export type RecordingSource = (typeof RECORDING_SOURCES)[keyof typeof RECORDING_SOURCES];
 
 // ── Resolution Presets ──────────────────────────────
-/** @type {Object<string, {width: number, height: number}>} */
-export const RESOLUTION_PRESETS = Object.freeze({
-  '720': { width: 1280, height: 720 },
-  '1080': { width: 1920, height: 1080 },
-  '2160': { width: 3840, height: 2160 },
-});
+export const RESOLUTION_PRESETS = {
+  720: { width: 1280, height: 720 },
+  1080: { width: 1920, height: 1080 },
+  2160: { width: 3840, height: 2160 },
+} as const;
 
 // ── PiP Configuration ───────────────────────────────
-/** @type {Object<string, number>} Bubble diameter in pixels */
-export const PIP_SIZES = Object.freeze({
+/** Bubble diameter in pixels */
+export const PIP_SIZES = {
   small: 120,
   medium: 180,
   large: 240,
-});
+} as const;
 
-/** @type {number} Margin from screen edge in pixels */
-export const PIP_MARGIN = 20;
+/** Margin from screen edge in pixels */
+export const PIP_MARGIN = 20 as const;
 
 // ── Editor Constants ────────────────────────────────
-/** @type {Object} Editor tool names */
-export const EDITOR_TOOLS = Object.freeze({
+/** Editor tool names */
+export const EDITOR_TOOLS = {
   ARROW: 'arrow',
   RECT: 'rect',
   CIRCLE: 'circle',
@@ -143,10 +152,12 @@ export const EDITOR_TOOLS = Object.freeze({
   BLUR: 'blur',
   HIGHLIGHT: 'highlight',
   CROP: 'crop',
-});
+} as const;
 
-/** @type {Object<string, string>} Keyboard shortcut → tool mapping */
-export const EDITOR_SHORTCUTS = Object.freeze({
+export type EditorTool = (typeof EDITOR_TOOLS)[keyof typeof EDITOR_TOOLS];
+
+/** Keyboard shortcut to tool mapping */
+export const EDITOR_SHORTCUTS = {
   a: EDITOR_TOOLS.ARROW,
   r: EDITOR_TOOLS.RECT,
   e: EDITOR_TOOLS.CIRCLE,
@@ -156,81 +167,81 @@ export const EDITOR_SHORTCUTS = Object.freeze({
   b: EDITOR_TOOLS.BLUR,
   h: EDITOR_TOOLS.HIGHLIGHT,
   c: EDITOR_TOOLS.CROP,
-});
+} as const;
 
-/** @type {Object} Text font sizes mapped from stroke width */
-export const TEXT_FONT_SIZES = Object.freeze({
+/** Text font sizes mapped from stroke width */
+export const TEXT_FONT_SIZES = {
   THIN: 16,
   MEDIUM: 24,
   THICK: 36,
-});
+} as const;
 
-/** @type {number} Minimum drag distance (px) to register as a shape, not a click */
-export const MIN_DRAG_DISTANCE = 3;
+/** Minimum drag distance (px) to register as a shape, not a click */
+export const MIN_DRAG_DISTANCE = 3 as const;
 
-/** @type {number} Minimum selection area to be valid (px) */
-export const MIN_SELECTION_SIZE = 5;
+/** Minimum selection area to be valid (px) */
+export const MIN_SELECTION_SIZE = 5 as const;
 
-/** @type {number} Minimum blur area dimension (px) */
-export const MIN_BLUR_SIZE = 2;
+/** Minimum blur area dimension (px) */
+export const MIN_BLUR_SIZE = 2 as const;
 
-/** @type {number} Corner radius for rectangle annotations (px) */
-export const RECT_CORNER_RADIUS = 8;
+/** Corner radius for rectangle annotations (px) */
+export const RECT_CORNER_RADIUS = 8 as const;
 
-/** @type {string} Highlight overlay color */
-export const HIGHLIGHT_COLOR = 'rgba(255, 214, 0, 0.35)';
+/** Highlight overlay color */
+export const HIGHLIGHT_COLOR = 'rgba(255, 214, 0, 0.35)' as const;
 
 // ── Timing Constants ────────────────────────────────
-/** @type {number} Delay between scroll captures for full-page mode (ms) */
-export const SCROLL_CAPTURE_DELAY_MS = 150;
+/** Delay between scroll captures for full-page mode (ms) */
+export const SCROLL_CAPTURE_DELAY_MS = 150 as const;
 
-/** @type {number} Countdown seconds before recording starts */
-export const RECORDING_COUNTDOWN_SECONDS = 3;
+/** Countdown seconds before recording starts */
+export const RECORDING_COUNTDOWN_SECONDS = 3 as const;
 
-/** @type {number} MediaRecorder data collection interval (ms) */
-export const MEDIA_RECORDER_TIMESLICE_MS = 1000;
+/** MediaRecorder data collection interval (ms) */
+export const MEDIA_RECORDER_TIMESLICE_MS = 1000 as const;
 
-/** @type {number} Toast notification display duration (ms) */
-export const TOAST_DURATION_MS = 2500;
+/** Toast notification display duration (ms) */
+export const TOAST_DURATION_MS = 2500 as const;
 
-/** @type {number} Settings save status display duration (ms) */
-export const SAVE_STATUS_DURATION_MS = 1500;
+/** Settings save status display duration (ms) */
+export const SAVE_STATUS_DURATION_MS = 1500 as const;
 
 // ── Recording Quality ───────────────────────────────
-/** @type {number} Video bitrate for recordings (bps) */
-export const VIDEO_BITRATE = 5_000_000;
+/** Video bitrate for recordings (bps) */
+export const VIDEO_BITRATE = 5_000_000 as const;
 
-/** @type {number} Canvas capture FPS for PiP compositing */
-export const PIP_CANVAS_FPS = 30;
+/** Canvas capture FPS for PiP compositing */
+export const PIP_CANVAS_FPS = 30 as const;
 
-/** @type {number} JPEG quality for editor export (0-1) */
-export const JPEG_EXPORT_QUALITY = 0.92;
+/** JPEG quality for editor export (0-1) */
+export const JPEG_EXPORT_QUALITY = 0.92 as const;
 
-/** @type {number} JPEG quality for thumbnails (0-1) */
-export const THUMBNAIL_QUALITY = 0.6;
+/** JPEG quality for thumbnails (0-1) */
+export const THUMBNAIL_QUALITY = 0.6 as const;
 
 // ── Storage Limits ──────────────────────────────────
-/** @type {number} Max dataUrl size to store in history (bytes) */
-export const MAX_HISTORY_DATAURL_SIZE = 500_000;
+/** Max dataUrl size to store in history (bytes) */
+export const MAX_HISTORY_DATAURL_SIZE = 500_000 as const;
 
-/** @type {number} Thumbnail max dimensions (px) */
-export const THUMBNAIL_MAX_WIDTH = 320;
-export const THUMBNAIL_MAX_HEIGHT = 200;
+/** Thumbnail max dimensions (px) */
+export const THUMBNAIL_MAX_WIDTH = 320 as const;
+export const THUMBNAIL_MAX_HEIGHT = 200 as const;
 
-/** @type {number} Recording chunk size for storage serialization (bytes) */
+/** Recording chunk size for storage serialization (bytes) */
 export const RECORDING_CHUNK_SIZE = 5 * 1024 * 1024;
 
 // ── History Pagination ──────────────────────────────
-/** @type {number} Items per page in history grid */
-export const HISTORY_PAGE_SIZE = 24;
+/** Items per page in history grid */
+export const HISTORY_PAGE_SIZE = 24 as const;
 
 // ── Badge Colors ────────────────────────────────────
-/** @type {string} Badge background during recording */
-export const BADGE_RECORDING_COLOR = '#EF4444';
+/** Badge background during recording */
+export const BADGE_RECORDING_COLOR = '#EF4444' as const;
 
 // ── Extension Info ──────────────────────────────────
-/** @type {string} Extension name prefix for logs and notifications */
-export const EXTENSION_NAME = 'ScreenBolt';
+/** Extension name prefix for logs and notifications */
+export const EXTENSION_NAME = 'ScreenBolt' as const;
 
-/** @type {string} Current version */
-export const VERSION = '0.8.8';
+/** Current version */
+export const VERSION = '0.8.8' as const;
