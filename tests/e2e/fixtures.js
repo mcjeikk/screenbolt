@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const test = base.extend({
+  // eslint-disable-next-line no-empty-pattern
   context: async ({}, use) => {
     const extensionPath = path.resolve(__dirname, '../../dist');
     const context = await chromium.launchPersistentContext('', {
