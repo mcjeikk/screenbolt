@@ -105,6 +105,32 @@ body {
   pointer-events: none;
 }
 
+/* ── Keyboard shortcut hints ── */
+.tool-btn.has-kbd {
+  position: relative;
+}
+
+.tool-btn kbd {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  font-size: 9px;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tool-btn.active kbd {
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* ── Action buttons ── */
 .action-btn {
   padding: 6px 14px;
@@ -177,6 +203,36 @@ body {
 
 .stroke-select:focus {
   border-color: var(--ss-primary);
+}
+
+/* ── Opacity control ── */
+.opacity-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  cursor: default;
+}
+
+.opacity-label {
+  font-size: 12px;
+  color: var(--ss-text-muted);
+  white-space: nowrap;
+}
+
+.opacity-control input[type='range'] {
+  width: 64px;
+  height: 4px;
+  accent-color: var(--ss-primary);
+  cursor: pointer;
+}
+
+.opacity-value {
+  font-size: 12px;
+  color: var(--ss-text-muted);
+  min-width: 32px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* ── Canvas Area ── */

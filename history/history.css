@@ -372,6 +372,39 @@ body {
   box-shadow: var(--ss-shadow-lg);
 }
 
+/* Selection checkbox overlay */
+.item-select-cb {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--ss-primary);
+  z-index: 2;
+}
+
+/* Selected card indicator */
+.history-item.selected {
+  border-color: var(--ss-primary);
+  box-shadow: 0 0 0 2px var(--ss-primary);
+}
+
+/* Inline rename input */
+.item-name-input {
+  width: 100%;
+  padding: 2px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--ss-bg-input);
+  color: var(--ss-text);
+  border: 1px solid var(--ss-primary);
+  border-radius: 3px;
+  outline: none;
+  box-sizing: border-box;
+}
+
 /* Focus visible for keyboard navigation */
 .history-item:focus-visible {
   outline: 2px solid var(--ss-primary);

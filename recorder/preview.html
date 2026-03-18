@@ -25,6 +25,28 @@
           <video id="preview-video" controls playsinline></video>
         </div>
 
+        <div id="trim-controls" class="trim-controls">
+          <div class="trim-header">
+            <span class="trim-title">Trim</span>
+            <a id="trim-reset" class="trim-reset" href="#">Reset</a>
+          </div>
+          <div class="trim-bar">
+            <input type="range" id="trim-start" class="trim-handle trim-handle-start" min="0" max="100" step="0.1" value="0" />
+            <input type="range" id="trim-end" class="trim-handle trim-handle-end" min="0" max="100" step="0.1" value="100" />
+          </div>
+          <div class="trim-labels">
+            <span id="trim-start-label">00:00</span>
+            <span id="trim-end-label">--:--</span>
+          </div>
+        </div>
+
+        <div id="trim-progress" class="trim-progress" style="display: none">
+          <div class="progress-bar">
+            <div id="trim-progress-fill" class="progress-fill"></div>
+          </div>
+          <p id="trim-status">Trimming… 0%</p>
+        </div>
+
         <div class="metadata">
           <div class="meta-item">
             <span class="meta-label">Duration</span>
@@ -42,10 +64,11 @@
 
         <div class="action-buttons">
           <button id="btn-download" class="btn btn-primary">⬇️ Download</button>
+          <button id="btn-gif" class="btn btn-secondary">🎞️ Export as GIF</button>
           <button id="btn-discard" class="btn btn-ghost">🗑️ Discard</button>
         </div>
 
-        <!-- MP4 progress bar removed — Chrome 130+ records natively as MP4 -->
+        <p id="gif-progress" class="gif-progress" style="display: none">Converting to GIF…</p>
       </div>
 
       <div id="error-container" class="error-container" style="display: none">

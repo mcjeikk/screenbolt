@@ -17,6 +17,7 @@ interface Point {
 interface BaseAnnotation {
   color: string;
   strokeWidth: number;
+  opacity: number;
 }
 
 interface ArrowAnnotation extends BaseAnnotation {
@@ -148,6 +149,8 @@ const btnUndo = document.getElementById('btn-undo') as HTMLButtonElement;
 const btnRedo = document.getElementById('btn-redo') as HTMLButtonElement;
 const btnCropApply = document.getElementById('btn-crop-apply') as HTMLButtonElement;
 const textOverlay = document.getElementById('text-input-overlay') as HTMLTextAreaElement;
+const opacitySlider = document.getElementById('tool-opacity') as HTMLInputElement;
+const opacityValueLabel = document.getElementById('opacity-value') as HTMLSpanElement;
 const statusDimensions = document.getElementById('status-dimensions') as HTMLSpanElement;
 const statusTool = document.getElementById('status-tool') as HTMLSpanElement;
 const statusSize = document.getElementById('status-size') as HTMLSpanElement;
@@ -168,6 +171,8 @@ let loadedDataUrl: string | null = null;
 const getColor = (): string => colorPicker.value;
 
 const getStrokeWidth = (): number => parseInt(strokeSelect.value, 10);
+
+const getOpacity = (): number => parseInt(opacitySlider.value, 10) / 100;
 
 /** Convert mouse event coordinates to canvas coordinates. */
 function canvasCoords(e: MouseEvent): Point {
@@ -211,6 +216,10 @@ function requestRender(): void {
 /** Draw a single annotation on the canvas. */
 function drawAnnotation(ann: Annotation): void {
   ctx.save();
+  // Blur and crop always draw at full opacity
+  if (ann.type !== 'blur' && ann.type !== 'crop') {
+    ctx.globalAlpha = ann.opacity;
+  }
   ctx.strokeStyle = ann.color;
   ctx.fillStyle = ann.color;
   ctx.lineWidth = ann.strokeWidth;
@@ -463,6 +472,7 @@ function onMouseDown(e: MouseEvent): void {
       points: [{ x, y }],
       color: getColor(),
       strokeWidth: getStrokeWidth(),
+      opacity: getOpacity(),
     };
   } else {
     pendingAnnotation = {
@@ -473,6 +483,7 @@ function onMouseDown(e: MouseEvent): void {
       endY: y,
       color: getColor(),
       strokeWidth: getStrokeWidth(),
+      opacity: getOpacity(),
     } as DragAnnotation;
   }
 }
@@ -569,6 +580,7 @@ function commitTextInput(): void {
       text,
       color: getColor(),
       strokeWidth: getStrokeWidth(),
+      opacity: getOpacity(),
       fontSize: getTextFontSize(),
     });
     requestRender();
@@ -677,6 +689,10 @@ colorPicker.addEventListener('input', () => {
 });
 
 colorPreview.addEventListener('click', () => colorPicker.click());
+
+opacitySlider.addEventListener('input', () => {
+  opacityValueLabel.textContent = `${opacitySlider.value}%`;
+});
 
 // ── Button Setup ────────────────────────────────
 

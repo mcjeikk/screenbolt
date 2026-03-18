@@ -92,6 +92,114 @@ body {
   max-height: 500px;
 }
 
+/* Trim Controls */
+.trim-controls {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.trim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.trim-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.trim-reset {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.trim-reset:hover {
+  color: var(--accent);
+}
+
+.trim-bar {
+  position: relative;
+  height: 32px;
+  margin-bottom: 6px;
+}
+
+.trim-handle {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  margin: 0;
+}
+
+.trim-handle::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+}
+
+.trim-handle::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-card);
+  cursor: pointer;
+  pointer-events: auto;
+  margin-top: -6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s;
+}
+
+.trim-handle::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Hide the track on the end slider so only one track shows */
+.trim-handle-end::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.trim-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.trim-progress {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.trim-progress #trim-status {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 /* Metadata */
 .metadata {
   display: flex;
@@ -206,6 +314,15 @@ body {
   font-size: 13px;
   color: var(--text-muted);
   text-align: center;
+}
+
+/* GIF Export Progress */
+.gif-progress {
+  font-size: 13px;
+  color: var(--accent);
+  text-align: center;
+  padding: 10px 0;
+  font-weight: 600;
 }
 
 /* Error */

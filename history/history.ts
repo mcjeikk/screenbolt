@@ -15,6 +15,8 @@ let currentFilter = 'all';
 let currentSort = 'date-desc';
 let searchQuery = '';
 let displayedCount = 0;
+let selectionMode = false;
+const selectedIds = new Set<string>();
 
 // ── DOM Refs ──
 const grid = document.getElementById('history-grid')!;
@@ -25,6 +27,9 @@ const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
 const loadMoreContainer = document.getElementById('load-more-container') as HTMLElement;
 const btnLoadMore = document.getElementById('btn-load-more') as HTMLButtonElement;
 const btnClearAll = document.getElementById('btn-clear-all') as HTMLButtonElement;
+const btnSelectMode = document.getElementById('btn-select-mode') as HTMLButtonElement;
+const btnSelectAll = document.getElementById('btn-select-all') as HTMLButtonElement;
+const btnDeleteSelected = document.getElementById('btn-delete-selected') as HTMLButtonElement;
 
 // ── Init ────────────────────────────────────────
 
@@ -87,6 +92,42 @@ function setupEvents(): void {
         allEntries = [];
         await chrome.storage.local.set({ historyEntries: [] });
         applyFilters();
+      },
+    );
+  });
+
+  // Toggle selection mode
+  btnSelectMode.addEventListener('click', () => {
+    selectionMode = !selectionMode;
+    selectedIds.clear();
+    updateSelectionUI();
+    applyFilters();
+  });
+
+  // Select all / Deselect all
+  btnSelectAll.addEventListener('click', () => {
+    if (selectedIds.size === filteredEntries.length) {
+      selectedIds.clear();
+    } else {
+      filteredEntries.forEach((e) => selectedIds.add(e.id));
+    }
+    updateSelectionUI();
+    syncCheckboxes();
+  });
+
+  // Delete selected
+  btnDeleteSelected.addEventListener('click', () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    showConfirmDialog(
+      'Delete Selected',
+      `This will permanently delete ${count} item${count !== 1 ? 's' : ''}. This action cannot be undone.`,
+      async () => {
+        allEntries = allEntries.filter((e) => !selectedIds.has(e.id));
+        await chrome.storage.local.set({ historyEntries: allEntries });
+        selectedIds.clear();
+        applyFilters();
+        updateSelectionUI();
       },
     );
   });
@@ -166,17 +207,32 @@ function updateUI(): void {
 function createItemCard(entry: HistoryEntry): HTMLDivElement {
   const card = document.createElement('div');
   card.className = 'history-item';
+  card.dataset.entryId = entry.id;
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
   card.setAttribute('aria-label', `${entry.name} — ${entry.type}`);
+
+  if (selectionMode && selectedIds.has(entry.id)) {
+    card.classList.add('selected');
+  }
+
   card.addEventListener('click', (e: MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.item-delete')) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.item-delete') || target.closest('.item-name-input')) return;
+    if (selectionMode) {
+      toggleSelect(entry.id, card);
+      return;
+    }
     openEntry(entry);
   });
   card.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      openEntry(entry);
+      if (selectionMode) {
+        toggleSelect(entry.id, card);
+      } else {
+        openEntry(entry);
+      }
     }
   });
 
@@ -209,6 +265,20 @@ function createItemCard(entry: HistoryEntry): HTMLDivElement {
   });
   card.appendChild(del);
 
+  // Selection checkbox (shown only in selection mode)
+  if (selectionMode) {
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'item-select-cb';
+    cb.checked = selectedIds.has(entry.id);
+    cb.setAttribute('aria-label', `Select ${entry.name}`);
+    cb.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation();
+      toggleSelect(entry.id, card);
+    });
+    card.appendChild(cb);
+  }
+
   // Info section
   const info = document.createElement('div');
   info.className = 'item-info';
@@ -217,6 +287,11 @@ function createItemCard(entry: HistoryEntry): HTMLDivElement {
   nameEl.className = 'item-name';
   nameEl.textContent = entry.name || 'Untitled';
   nameEl.title = entry.name || '';
+  nameEl.addEventListener('dblclick', (e: MouseEvent) => {
+    e.stopPropagation();
+    if (selectionMode) return;
+    startInlineRename(nameEl, entry);
+  });
   info.appendChild(nameEl);
 
   const meta = document.createElement('div');
@@ -309,7 +384,7 @@ function showConfirmDialog(title: string, message: string, onConfirm: () => void
 
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'btn-confirm-yes';
-  confirmBtn.textContent = 'Delete All';
+  confirmBtn.textContent = 'Delete';
   confirmBtn.addEventListener('click', () => {
     onConfirm();
     overlay.remove();
@@ -325,6 +400,111 @@ function showConfirmDialog(title: string, message: string, onConfirm: () => void
 
   document.body.appendChild(overlay);
   cancelBtn.focus();
+}
+
+// ── Selection Helpers ────────────────────────────
+
+// Toggle selection of a single item.
+function toggleSelect(id: string, card: HTMLDivElement): void {
+  if (selectedIds.has(id)) {
+    selectedIds.delete(id);
+    card.classList.remove('selected');
+  } else {
+    selectedIds.add(id);
+    card.classList.add('selected');
+  }
+  const cb = card.querySelector<HTMLInputElement>('.item-select-cb');
+  if (cb) cb.checked = selectedIds.has(id);
+  updateSelectionUI();
+}
+
+// Update selection mode button states and visibility.
+function updateSelectionUI(): void {
+  btnSelectMode.textContent = selectionMode ? 'Exit Select' : '\u2611 Select';
+  btnSelectAll.style.display = selectionMode ? '' : 'none';
+  btnDeleteSelected.style.display = selectionMode ? '' : 'none';
+
+  if (selectionMode) {
+    const allSelected = filteredEntries.length > 0 && selectedIds.size === filteredEntries.length;
+    btnSelectAll.textContent = allSelected ? 'Deselect All' : 'Select All';
+    btnDeleteSelected.textContent = `Delete Selected (${selectedIds.size})`;
+    btnDeleteSelected.disabled = selectedIds.size === 0;
+  }
+}
+
+// Sync all visible checkboxes with the selectedIds set.
+function syncCheckboxes(): void {
+  grid.querySelectorAll<HTMLDivElement>('.history-item').forEach((card) => {
+    const id = card.dataset.entryId;
+    if (!id) return;
+    const cb = card.querySelector<HTMLInputElement>('.item-select-cb');
+    if (cb) cb.checked = selectedIds.has(id);
+    card.classList.toggle('selected', selectedIds.has(id));
+  });
+}
+
+// ── Inline Rename ───────────────────────────────
+
+// Start inline rename on a name element.
+function startInlineRename(nameEl: HTMLDivElement, entry: HistoryEntry): void {
+  // Prevent opening the entry while renaming
+  const card = nameEl.closest('.history-item') as HTMLElement | null;
+  if (!card) return;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'item-name-input';
+  input.value = entry.name || '';
+  input.setAttribute('aria-label', 'Rename capture');
+
+  const originalText = nameEl.textContent || '';
+  nameEl.textContent = '';
+  nameEl.appendChild(input);
+  input.focus();
+  input.select();
+
+  let committed = false;
+
+  const commit = async (): Promise<void> => {
+    if (committed) return;
+    committed = true;
+    const newName = input.value.trim() || originalText;
+    nameEl.textContent = newName;
+    nameEl.title = newName;
+
+    // Persist to storage
+    entry.name = newName;
+    const idx = allEntries.findIndex((e) => e.id === entry.id);
+    if (idx !== -1) {
+      allEntries[idx].name = newName;
+      await chrome.storage.local.set({ historyEntries: allEntries });
+    }
+  };
+
+  const cancel = (): void => {
+    if (committed) return;
+    committed = true;
+    nameEl.textContent = originalText;
+    nameEl.title = originalText;
+  };
+
+  input.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+    e.stopPropagation();
+  });
+
+  input.addEventListener('blur', () => {
+    if (!committed) commit();
+  });
+
+  // Prevent card click from firing while editing
+  input.addEventListener('click', (e: MouseEvent) => e.stopPropagation());
 }
 
 // ── Helpers ─────────────────────────────────────
