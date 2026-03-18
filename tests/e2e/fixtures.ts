@@ -1,11 +1,15 @@
-// tests/e2e/fixtures.js
-import { test as base, chromium } from '@playwright/test';
+import { test as base, chromium, type BrowserContext } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export const test = base.extend({
+type ExtensionFixtures = {
+  context: BrowserContext;
+  extensionId: string;
+};
+
+export const test = base.extend<ExtensionFixtures>({
   // eslint-disable-next-line no-empty-pattern
   context: async ({}, use) => {
     const extensionPath = path.resolve(__dirname, '../../dist');

@@ -2,7 +2,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Re-import fresh module per test by using dynamic import + vi.resetModules
-let createLogger, getErrorLog, clearErrorLog, LOG_LEVELS;
+type LoggerModule = typeof import('../../utils/logger.js');
+let createLogger: LoggerModule['createLogger'];
+let getErrorLog: LoggerModule['getErrorLog'];
+let clearErrorLog: LoggerModule['clearErrorLog'];
+let LOG_LEVELS: LoggerModule['LOG_LEVELS'];
 
 beforeEach(async () => {
   vi.resetModules();
@@ -79,7 +83,7 @@ describe('Error buffer', () => {
   });
 
   it('ERROR level triggers immediate flush to storage', () => {
-    chrome.storage.local.set.mockClear();
+    vi.mocked(chrome.storage.local.set).mockClear();
     const log = createLogger('TestModule');
     log.error('critical');
     expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
@@ -90,7 +94,7 @@ describe('Error buffer', () => {
 
   it('WARN level flush is debounced', () => {
     vi.useFakeTimers();
-    chrome.storage.local.set.mockClear();
+    vi.mocked(chrome.storage.local.set).mockClear();
     const log = createLogger('TestModule');
     log.warn('deferred');
     // Not flushed immediately
