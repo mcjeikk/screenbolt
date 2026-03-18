@@ -22,7 +22,7 @@ export interface RecordingConfig {
 export interface Settings {
   screenshotFormat: 'png' | 'jpg';
   jpgQuality: number;
-  afterCapture: 'editor' | 'download' | 'clipboard';
+  afterCapture: 'editor' | 'save' | 'clipboard';
   saveSubfolder: string;
   recResolution: '720' | '1080' | '2160';
   recAudio: 'microphone' | 'system' | 'both' | 'none';

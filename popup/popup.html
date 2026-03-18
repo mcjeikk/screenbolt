@@ -1,145 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=320">
-  <title>ScreenBolt</title>
-  <link rel="stylesheet" href="../assets/styles/themes.css">
-  <link rel="stylesheet" href="popup.css">
-  <script src="../assets/scripts/theme-init.js"></script>
-</head>
-<body>
-  <div class="container" role="main">
-    <header class="header">
-      <img src="../assets/icons/icon-32.png" alt="" class="logo" aria-hidden="true">
-      <h1>ScreenBolt</h1>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=320" />
+    <title>ScreenBolt</title>
+    <link rel="stylesheet" href="../assets/styles/themes.css" />
+    <link rel="stylesheet" href="popup.css" />
+    <script src="../assets/scripts/theme-init.js"></script>
+  </head>
+  <body>
+    <div class="container" role="main">
+      <header class="header">
+        <img src="../assets/icons/icon-32.png" alt="" class="logo" aria-hidden="true" />
+        <h1>ScreenBolt</h1>
+      </header>
 
-    <!-- Recording indicator (shown when recording is active) -->
-    <div id="recording-indicator" class="recording-indicator" style="display:none;" role="status" aria-live="polite">
-      <span class="rec-dot-pulse" aria-hidden="true"></span>
-      <span>Recording in progress…</span>
-      <button id="btn-stop-recording" class="btn-stop-inline" aria-label="Stop recording">⏹ Stop</button>
-    </div>
-
-    <!-- Last capture quick access -->
-    <div id="last-capture" class="last-capture" style="display:none;" role="region" aria-label="Last capture">
-      <img id="last-capture-thumb" class="last-capture-thumb" alt="Last capture thumbnail">
-      <div class="last-capture-info">
-        <span id="last-capture-name" class="last-capture-name">-</span>
-        <button id="btn-open-last" class="btn-link-small" aria-label="Open last capture">Open last →</button>
-      </div>
-    </div>
-
-    <section class="section" aria-label="Screenshot tools">
-      <h2>📸 Screenshot</h2>
-      <div class="button-group" role="group" aria-label="Screenshot capture options">
-        <button id="btn-visible" class="btn btn-primary" title="Capture visible area (Alt+Shift+V)" aria-label="Capture visible area">
-          <span class="btn-icon" aria-hidden="true">🖥️</span>
-          <span class="btn-text">Visible Area</span>
-          <span class="btn-shortcut" aria-hidden="true">Alt+Shift+V</span>
-        </button>
-        <button id="btn-full" class="btn btn-primary" title="Capture full page (Alt+Shift+F)" aria-label="Capture full page">
-          <span class="btn-icon" aria-hidden="true">📄</span>
-          <span class="btn-text">Full Page</span>
-          <span class="btn-shortcut" aria-hidden="true">Alt+Shift+F</span>
-        </button>
-        <button id="btn-selection" class="btn btn-primary" title="Capture selection (Alt+Shift+S)" aria-label="Capture selected area">
-          <span class="btn-icon" aria-hidden="true">✂️</span>
-          <span class="btn-text">Selection</span>
-          <span class="btn-shortcut" aria-hidden="true">Alt+Shift+S</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Recording Section — inline config -->
-    <section id="record-section" class="section" aria-label="Recording tools">
-      <h2>🎥 Record</h2>
-
-      <!-- Source selector -->
-      <div class="source-selector" role="group" aria-label="Recording source">
-        <button class="source-btn active" data-source="tab" aria-pressed="true" aria-label="Record current tab">📑 Tab</button>
-        <button class="source-btn" data-source="screen" aria-pressed="false" aria-label="Record full screen">🖥️ Screen</button>
-        <button class="source-btn" data-source="camera" aria-pressed="false" aria-label="Record camera only">📷 Camera</button>
+      <!-- Recording indicator (shown when recording is active) -->
+      <div id="recording-indicator" class="recording-indicator" style="display: none" role="status" aria-live="polite">
+        <span class="rec-dot-pulse" aria-hidden="true"></span>
+        <span>Recording in progress…</span>
+        <button id="btn-stop-recording" class="btn-stop-inline" aria-label="Stop recording">⏹ Stop</button>
       </div>
 
-      <!-- Recording options -->
-      <div class="rec-options">
-        <label class="rec-option">
-          <span class="rec-option-label">🎤 Microphone</span>
-          <input type="checkbox" id="opt-mic" checked aria-label="Enable microphone">
-          <span class="toggle-slider"></span>
-        </label>
+      <!-- Last capture quick access -->
+      <div id="last-capture" class="last-capture" style="display: none" role="region" aria-label="Last capture">
+        <img id="last-capture-thumb" class="last-capture-thumb" alt="Last capture thumbnail" />
+        <div class="last-capture-info">
+          <span id="last-capture-name" class="last-capture-name">-</span>
+          <button id="btn-open-last" class="btn-link-small" aria-label="Open last capture">Open last →</button>
+        </div>
+      </div>
 
-        <label class="rec-option" id="system-audio-row">
-          <span class="rec-option-label">🔊 System Audio</span>
-          <input type="checkbox" id="opt-system-audio" aria-label="Enable system audio">
-          <span class="toggle-slider"></span>
-        </label>
+      <section class="section" aria-label="Screenshot tools">
+        <h2>📸 Screenshot</h2>
+        <div class="button-group" role="group" aria-label="Screenshot capture options">
+          <button
+            id="btn-visible"
+            class="btn btn-primary"
+            title="Capture visible area (Alt+Shift+V)"
+            aria-label="Capture visible area"
+          >
+            <span class="btn-icon" aria-hidden="true">🖥️</span>
+            <span class="btn-text">Visible Area</span>
+            <span class="btn-shortcut" aria-hidden="true">Alt+Shift+V</span>
+          </button>
+          <button
+            id="btn-full"
+            class="btn btn-primary"
+            title="Capture full page (Alt+Shift+F)"
+            aria-label="Capture full page"
+          >
+            <span class="btn-icon" aria-hidden="true">📄</span>
+            <span class="btn-text">Full Page</span>
+            <span class="btn-shortcut" aria-hidden="true">Alt+Shift+F</span>
+          </button>
+          <button
+            id="btn-selection"
+            class="btn btn-primary"
+            title="Capture selection (Alt+Shift+S)"
+            aria-label="Capture selected area"
+          >
+            <span class="btn-icon" aria-hidden="true">✂️</span>
+            <span class="btn-text">Selection</span>
+            <span class="btn-shortcut" aria-hidden="true">Alt+Shift+S</span>
+          </button>
+        </div>
+      </section>
 
-        <label class="rec-option" id="pip-row">
-          <span class="rec-option-label">📹 PiP Webcam</span>
-          <input type="checkbox" id="opt-pip" aria-label="Enable picture-in-picture webcam">
-          <span class="toggle-slider"></span>
-        </label>
+      <!-- Recording Section — inline config -->
+      <section id="record-section" class="section" aria-label="Recording tools">
+        <h2>🎥 Record</h2>
 
-        <!-- PiP sub-options (hidden by default) -->
-        <div id="pip-options" class="pip-options" style="display:none;">
-          <div class="pip-sub-option">
-            <span>Position</span>
-            <select id="pip-position" aria-label="PiP position">
-              <option value="bottom-right">↘ Bottom Right</option>
-              <option value="bottom-left">↙ Bottom Left</option>
-              <option value="top-right">↗ Top Right</option>
-              <option value="top-left">↖ Top Left</option>
-            </select>
-          </div>
-          <div class="pip-sub-option">
-            <span>Size</span>
-            <select id="pip-size" aria-label="PiP size">
-              <option value="small">Small</option>
-              <option value="medium" selected>Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </div>
+        <!-- Source selector -->
+        <div class="source-selector" role="group" aria-label="Recording source">
+          <button class="source-btn active" data-source="tab" aria-pressed="true" aria-label="Record current tab">
+            📑 Tab
+          </button>
+          <button class="source-btn" data-source="screen" aria-pressed="false" aria-label="Record full screen">
+            🖥️ Screen
+          </button>
+          <button class="source-btn" data-source="camera" aria-pressed="false" aria-label="Record camera only">
+            📷 Camera
+          </button>
         </div>
 
-        <!-- Resolution -->
-        <div class="rec-option">
-          <span class="rec-option-label">📐 Resolution</span>
-          <select id="opt-resolution" class="res-select" aria-label="Recording resolution">
-            <option value="720">720p</option>
-            <option value="1080" selected>1080p</option>
-            <option value="2160">4K</option>
-          </select>
+        <!-- Recording options -->
+        <div class="rec-options">
+          <label class="rec-option">
+            <span class="rec-option-label">🎤 Microphone</span>
+            <input type="checkbox" id="opt-mic" checked aria-label="Enable microphone" />
+            <span class="toggle-slider"></span>
+          </label>
+
+          <label class="rec-option" id="system-audio-row">
+            <span class="rec-option-label">🔊 System Audio</span>
+            <input type="checkbox" id="opt-system-audio" aria-label="Enable system audio" />
+            <span class="toggle-slider"></span>
+          </label>
+
+          <label class="rec-option" id="pip-row">
+            <span class="rec-option-label">📹 PiP Webcam</span>
+            <input type="checkbox" id="opt-pip" aria-label="Enable picture-in-picture webcam" />
+            <span class="toggle-slider"></span>
+          </label>
+
+          <!-- PiP sub-options (hidden by default) -->
+          <div id="pip-options" class="pip-options" style="display: none">
+            <div class="pip-sub-option">
+              <span>Position</span>
+              <select id="pip-position" aria-label="PiP position">
+                <option value="bottom-right">↘ Bottom Right</option>
+                <option value="bottom-left">↙ Bottom Left</option>
+                <option value="top-right">↗ Top Right</option>
+                <option value="top-left">↖ Top Left</option>
+              </select>
+            </div>
+            <div class="pip-sub-option">
+              <span>Size</span>
+              <select id="pip-size" aria-label="PiP size">
+                <option value="small">Small</option>
+                <option value="medium" selected>Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Resolution -->
+          <div class="rec-option">
+            <span class="rec-option-label">📐 Resolution</span>
+            <select id="opt-resolution" class="res-select" aria-label="Recording resolution">
+              <option value="720">720p</option>
+              <option value="1080" selected>1080p</option>
+              <option value="2160">4K</option>
+            </select>
+          </div>
+
+          <label class="rec-option">
+            <span class="rec-option-label">⏱️ Countdown</span>
+            <input type="checkbox" id="opt-countdown" checked aria-label="Enable countdown before recording" />
+            <span class="toggle-slider"></span>
+          </label>
         </div>
 
-        <label class="rec-option">
-          <span class="rec-option-label">⏱️ Countdown</span>
-          <input type="checkbox" id="opt-countdown" checked aria-label="Enable countdown before recording">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
+        <!-- Start button -->
+        <button id="btn-start-recording" class="btn btn-start-recording" aria-label="Start recording">
+          🔴 Start Recording
+        </button>
 
-      <!-- Start button -->
-      <button id="btn-start-recording" class="btn btn-start-recording" aria-label="Start recording">
-        🔴 Start Recording
-      </button>
+        <!-- Error message -->
+        <div id="rec-error" class="rec-error" style="display: none" role="alert"></div>
+      </section>
 
-      <!-- Error message -->
-      <div id="rec-error" class="rec-error" style="display:none;" role="alert"></div>
-    </section>
+      <footer class="footer" role="contentinfo">
+        <button id="btn-history" class="btn-link" aria-label="Open capture history">📁 History</button>
+        <span class="footer-version" aria-label="Version 0.7.0">v0.7.0</span>
+        <button id="btn-settings" class="btn-link" aria-label="Open settings">⚙️ Settings</button>
+      </footer>
+    </div>
 
-    <footer class="footer" role="contentinfo">
-      <button id="btn-history" class="btn-link" aria-label="Open capture history">📁 History</button>
-      <span class="footer-version" aria-label="Version 0.7.0">v0.7.0</span>
-      <button id="btn-settings" class="btn-link" aria-label="Open settings">⚙️ Settings</button>
-    </footer>
-  </div>
+    <!-- Status region for screen readers -->
+    <div id="status-message" role="status" aria-live="polite" class="sr-only"></div>
 
-  <!-- Status region for screen readers -->
-  <div id="status-message" role="status" aria-live="polite" class="sr-only"></div>
-
-  <script src="popup.js"></script>
-</body>
+    <script type="module" src="popup.ts"></script>
+  </body>
 </html>
