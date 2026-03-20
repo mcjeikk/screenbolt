@@ -164,20 +164,9 @@ async function handleStartRecording(config: RecordingConfig): Promise<void> {
     }
   }
 
-  // PiP webcam: for tab recording, content script injects a visible bubble (captured by tabCapture).
-  // For screen/camera recording, we composite the webcam onto the canvas in the offscreen document
-  // because the content script bubble is only visible inside the browser.
-  if (config.pip && config.source !== 'tab' && config.source !== 'camera') {
-    try {
-      webcamStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 480 }, height: { ideal: 480 } },
-        audio: false,
-      });
-      console.info(LOG_PREFIX, 'Webcam acquired for PiP compositing');
-    } catch (err) {
-      console.warn(LOG_PREFIX, 'Webcam not available for PiP:', (err as Error).message);
-    }
-  }
+  // PiP webcam is handled by the content script bubble injected into the active tab.
+  // For tab recording: tabCapture captures the visible page including the bubble.
+  // For screen recording: getDisplayMedia captures the full screen including the bubble.
 
   console.info(LOG_PREFIX, `Streams: main=${mainStream.getVideoTracks().length}v/${mainStream.getAudioTracks().length}a, mic=${micStream?.getAudioTracks().length ?? 0}a, webcam=${webcamStream?.getVideoTracks().length ?? 0}v, pip=${config.pip}, source=${config.source}`);
   combinedStream = buildCombinedStream(mainStream, micStream, webcamStream, config);

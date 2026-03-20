@@ -563,9 +563,10 @@ async function continueStartRecording(
     if (targetTabId) {
       await injectRecordingWidget(targetTabId);
 
-      // If PiP webcam is enabled for tab recording, tell the content script to show the bubble.
-      // For screen recording, PiP is composited in the offscreen document via canvas.
-      if (config.pip && config.source === 'tab') {
+      // If PiP webcam is enabled, inject the bubble into the active tab.
+      // For tab recording: tabCapture captures the visible page including the bubble.
+      // For screen recording: getDisplayMedia captures the full screen including the bubble.
+      if (config.pip) {
         const pipMsg = {
           action: 'setup-webcam-pip',
           config: {
