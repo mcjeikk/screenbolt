@@ -295,6 +295,10 @@ function removeSelectionOverlay(): void {
 async function captureSelection(rect: DOMRect): Promise<void> {
   removeSelectionOverlay();
 
+  // Wait for the overlay to be fully removed from the DOM and repainted
+  // before capturing — otherwise the dark overlay appears in the screenshot.
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
   try {
     const response = await safeSendMessage<CaptureVisibleResponse>({ action: 'capture-visible' });
 
