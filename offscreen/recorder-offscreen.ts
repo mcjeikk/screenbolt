@@ -273,22 +273,43 @@ function buildCombinedStream(
     videoStream = createPiPStream(main, webcam, config.pipPosition, config.pipSize);
   }
 
-  const audioTracks: MediaStreamTrack[] = [];
+  const mainAudioTracks = main.getAudioTracks();
+  const hasMic = mic && mic.getAudioTracks().length > 0;
+  const hasSystemAudio = mainAudioTracks.length > 0;
 
-  // Main stream audio (tab/system)
-  main.getAudioTracks().forEach((t) => audioTracks.push(t));
+  let audioTracks: MediaStreamTrack[] = [];
 
-  // Mic audio with gain control
-  if (mic) {
+  if (hasMic && hasSystemAudio) {
+    // Both mic and system audio — must mix through AudioContext
+    // (MediaRecorder only records the first audio track if multiple are added raw)
     audioContext = audioContext || new AudioContext();
-    const micSource = audioContext.createMediaStreamSource(mic);
+    const dest = audioContext.createMediaStreamDestination();
+
+    // System audio → mixer
+    const systemSource = audioContext.createMediaStreamSource(new MediaStream(mainAudioTracks));
+    systemSource.connect(dest);
+
+    // Mic audio → gain → mixer
+    const micSource = audioContext.createMediaStreamSource(mic!);
     micGainNode = audioContext.createGain();
     micGainNode.gain.value = 1.0;
     micSource.connect(micGainNode);
+    micGainNode.connect(dest);
 
+    audioTracks = [...dest.stream.getAudioTracks()];
+  } else if (hasMic) {
+    // Mic only — route through gain for mute control
+    audioContext = audioContext || new AudioContext();
+    const micSource = audioContext.createMediaStreamSource(mic!);
+    micGainNode = audioContext.createGain();
+    micGainNode.gain.value = 1.0;
+    micSource.connect(micGainNode);
     const dest = audioContext.createMediaStreamDestination();
     micGainNode.connect(dest);
-    dest.stream.getAudioTracks().forEach((t) => audioTracks.push(t));
+    audioTracks = [...dest.stream.getAudioTracks()];
+  } else if (hasSystemAudio) {
+    // System audio only — pass through directly
+    audioTracks = [...mainAudioTracks];
   }
 
   return new MediaStream([...videoStream.getVideoTracks(), ...audioTracks]);

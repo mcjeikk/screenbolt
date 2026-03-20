@@ -505,11 +505,23 @@ async function continueStartRecording(
     // Create/ensure offscreen document (no-op on Firefox)
     await ensureRecorderOffscreenPlatform();
 
-    // Send config + streamId to offscreen to start recording
-    const offscreenResponse = (await chrome.runtime.sendMessage({
-      action: 'offscreen-start-recording',
-      config,
-    })) as HandlerResponse | undefined;
+    // Send config to offscreen to start recording.
+    // Retry because the offscreen document may not have registered its listener yet
+    // (especially on re-creation after a previous recording closed it).
+    let offscreenResponse: HandlerResponse | undefined;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 300));
+        offscreenResponse = (await chrome.runtime.sendMessage({
+          action: 'offscreen-start-recording',
+          config,
+        })) as HandlerResponse | undefined;
+        break; // message sent successfully
+      } catch (err) {
+        if (attempt === 4) throw err; // final attempt failed
+        log.debug(`Offscreen not ready (attempt ${attempt + 1}), retrying...`);
+      }
+    }
 
     if (!offscreenResponse?.success) {
       throw new Error(offscreenResponse?.error || 'Offscreen failed to start recording');
