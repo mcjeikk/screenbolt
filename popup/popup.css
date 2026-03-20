@@ -469,3 +469,44 @@ body {
   text-align: center;
   z-index: 100;
 }
+
+/* Donation bar — sticky bottom, always visible */
+.donate-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: center;
+  border-top: 1px solid #fcd34d;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.donate-bar:hover {
+  background: linear-gradient(135deg, #fde68a, #fbbf24);
+  color: #78350f;
+}
+
+.donate-cta {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Dark theme */
+[data-theme="dark"] .donate-bar {
+  background: linear-gradient(135deg, #451a03, #78350f);
+  color: #fde68a;
+  border-top-color: #92400e;
+}
+
+[data-theme="dark"] .donate-bar:hover {
+  background: linear-gradient(135deg, #78350f, #92400e);
+  color: #fef3c7;
+}
