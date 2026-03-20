@@ -164,10 +164,22 @@ async function handleStartRecording(config: RecordingConfig): Promise<void> {
     }
   }
 
-  // PiP webcam is handled by the content script (visible on page, captured by tabCapture).
-  // Offscreen only records the tab stream — the webcam bubble is part of the tab content.
+  // PiP webcam: for tab recording, content script injects a visible bubble (captured by tabCapture).
+  // For screen/camera recording, we composite the webcam onto the canvas in the offscreen document
+  // because the content script bubble is only visible inside the browser.
+  if (config.pip && config.source !== 'tab' && config.source !== 'camera') {
+    try {
+      webcamStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 480 }, height: { ideal: 480 } },
+        audio: false,
+      });
+      console.info(LOG_PREFIX, 'Webcam acquired for PiP compositing');
+    } catch (err) {
+      console.warn(LOG_PREFIX, 'Webcam not available for PiP:', (err as Error).message);
+    }
+  }
 
-  combinedStream = buildCombinedStream(mainStream, micStream, null, config);
+  combinedStream = buildCombinedStream(mainStream, micStream, webcamStream, config);
 
   // Play back tab audio to the user — chrome.tabCapture mutes the tab
   if (config.source === 'tab' && mainStream && mainStream.getAudioTracks().length > 0) {
@@ -227,9 +239,13 @@ async function acquireMainStream(config: RecordingConfig): Promise<MediaStream> 
   // Screen capture: use getDisplayMedia() directly in the offscreen document.
   // desktopCapture streamIds cannot be consumed in offscreen docs (Chrome limitation).
   if (source === 'screen') {
+    // Note: system audio only works if the user checks "Share system audio" in Chrome's picker.
+    // We request it here so Chrome shows the checkbox.
     return navigator.mediaDevices.getDisplayMedia({
       video: true,
       audio: systemAudio,
+      // @ts-expect-error -- preferCurrentTab is not in TypeScript types yet
+      preferCurrentTab: false, // show all sources, not just current tab
     });
   }
 
