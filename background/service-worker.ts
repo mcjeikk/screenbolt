@@ -326,43 +326,23 @@ chrome.runtime.onMessage.addListener(
       return true; // Keep channel open
     }
 
-    // CRITICAL: For start-recording with screen source, call desktopCapture IMMEDIATELY
-    // in the user gesture chain — same reason as tabCapture above.
-    if (
-      message.action === 'start-recording' &&
-      message.config?.source === 'screen' &&
-      hasDesktopCaptureSupport()
-    ) {
+    // Screen recording: desktopCapture streamIds don't work in offscreen documents
+    // (known Chrome limitation). Instead, tell offscreen to use getDisplayMedia() directly.
+    if (message.action === 'start-recording' && message.config?.source === 'screen') {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const activeTab = tabs[0];
-        const targetTabId = activeTab?.id;
-        if (!activeTab || !targetTabId) {
-          sendResponse({ success: false, error: 'No active tab found' });
-          return;
-        }
-        // Call chooseDesktopMedia SYNCHRONOUSLY in the user gesture chain
-        chrome.desktopCapture.chooseDesktopMedia(
-          ['screen', 'window', 'tab'],
-          activeTab,
-          (streamId) => {
-            if (!streamId) {
-              sendResponse({ success: false, error: 'User cancelled screen picker' });
-              return;
-            }
-            const configWithStream: InternalRecordingConfig = {
-              ...(message.config as RecordingConfig),
-              streamId,
-              targetTabId,
-            };
-            initPromise
-              .then(() => continueStartRecording(configWithStream))
-              .then((result) => sendResponse(result))
-              .catch((err: Error) => {
-                log.error('Start recording (screen) failed:', err.message);
-                sendResponse({ success: false, error: err.message });
-              });
-          },
-        );
+        const targetTabId = tabs[0]?.id;
+        const configForScreen: InternalRecordingConfig = {
+          ...(message.config as RecordingConfig),
+          targetTabId,
+          // No streamId — offscreen will use getDisplayMedia()
+        };
+        initPromise
+          .then(() => continueStartRecording(configForScreen))
+          .then((result) => sendResponse(result))
+          .catch((err: Error) => {
+            log.error('Start recording (screen) failed:', err.message);
+            sendResponse({ success: false, error: err.message });
+          });
       });
       return true; // Keep channel open
     }

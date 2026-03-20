@@ -56,6 +56,7 @@ export async function ensureOffscreenDocument(): Promise<void> {
       url: 'offscreen/recorder-offscreen.html',
       reasons: [
         chrome.offscreen.Reason.USER_MEDIA,
+        chrome.offscreen.Reason.DISPLAY_MEDIA,
         chrome.offscreen.Reason.AUDIO_PLAYBACK,
         chrome.offscreen.Reason.CLIPBOARD,
       ],

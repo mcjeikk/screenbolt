@@ -201,12 +201,11 @@ async function acquireMainStream(config: RecordingConfig): Promise<MediaStream> 
     });
   }
 
-  if (!streamId) {
-    throw new Error('No streamId provided for tab/screen capture');
-  }
-
   // For tab capture, use the streamId with chromeMediaSource
   if (source === 'tab') {
+    if (!streamId) {
+      throw new Error('No streamId provided for tab capture');
+    }
     return navigator.mediaDevices.getUserMedia({
       video: {
         mandatory: {
@@ -225,24 +224,13 @@ async function acquireMainStream(config: RecordingConfig): Promise<MediaStream> 
     } as ChromeMediaStreamConstraints as MediaStreamConstraints);
   }
 
-  // For screen capture (desktopCapture streamId)
+  // Screen capture: use getDisplayMedia() directly in the offscreen document.
+  // desktopCapture streamIds cannot be consumed in offscreen docs (Chrome limitation).
   if (source === 'screen') {
-    return navigator.mediaDevices.getUserMedia({
-      video: {
-        mandatory: {
-          chromeMediaSource: 'desktop',
-          chromeMediaSourceId: streamId,
-        },
-      },
-      audio: systemAudio
-        ? {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              chromeMediaSourceId: streamId,
-            },
-          }
-        : false,
-    } as ChromeMediaStreamConstraints as MediaStreamConstraints);
+    return navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: systemAudio,
+    });
   }
 
   throw new Error(`Unknown source: ${source}`);
